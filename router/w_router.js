@@ -11,7 +11,8 @@ import {
   queryOrderDataOne,
   insertOrderData,
 } from "../controller/web/w_order.js";
-import { uploadImage } from "../middleware/channel.uploadimage.js";
+import { uploadImaged } from "../middleware/channel.uploadimage.js";
+import { uploadImage } from "../middleware/product.uploadimage.js";
 const route = Route();
 
 route.get("/selectProductList", queryAll);
@@ -21,6 +22,6 @@ route.post("/insertProductList", uploadImage, insertData);
 route.get("/selectOrderList", queryOrderDataAll);
 route.get("/selectOrderId", queryOrderDataOne);
 route.post("/insertOrderList", insertOrderData);
-route.post("/insertChannelData", uploadImage, insertChannelData);
+route.post("/insertChannelData", uploadImaged, insertChannelData);
 
 export default route;
