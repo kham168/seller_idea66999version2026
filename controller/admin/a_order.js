@@ -1,10 +1,8 @@
 import { dbExecution } from "../../dbconfig/dbconfig.js";
 // query muas data all or select top 15
 
-
 export const queryOrderDataOne = async (req, res) => {
   try {
-
     const id = req.query.id ?? 0;
 
     if (!id) {
@@ -17,7 +15,7 @@ export const queryOrderDataOne = async (req, res) => {
 
     // ✅ Fetch data by id
     const dataQuery = `
-      SELECT id, productid, type, size, price,incomerate, custgmail, custaddress, 
+      SELECT id, productname, type, size, price,incomerate, custgmail, custaddress, 
              memberid,membername, cdate, membercf, detail, cfdate
       FROM public.tborderpd
       WHERE id = $1
@@ -109,10 +107,8 @@ export const queryOrderDataAll = async (req, res) => {
 
     // ✅ Fetch paginated data
     const dataQuery = `
-      SELECT id, productid, type, size, price,incomerate, custgmail, custaddress, 
-             memberid,membername, cdate, membercf, detail, cfdate
-      FROM public.tborderpd 
-      ORDER BY cdate DESC
+  SELECT id, productname, type, size, price, qty, totalprice, incomerate, custgmail, custaddress, memberid, membername, cdate, membercf, detail, cfdate
+	FROM public.tborderpd ORDER BY cdate DESC
       LIMIT $1 OFFSET $2;
     `;
 
@@ -188,7 +184,6 @@ export const queryOrderDataAll = async (req, res) => {
 
 export const insertOrderData = async (req, res) => {
   try {
-    
     const { id, custAddress, data } = req.body;
 
     // ✅ Validate request body
@@ -213,12 +208,21 @@ export const insertOrderData = async (req, res) => {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9,$10, NOW())
       RETURNING *;
     `;
-     
+
     const insertedRows = [];
 
     // ✅ Insert each order item one by one (or use batch if needed)
     for (const item of data) {
-      const { productId, type, size, price,incomeRate,custGmail, memberId,membername } = item;
+      const {
+        productId,
+        type,
+        size,
+        price,
+        incomeRate,
+        custGmail,
+        memberId,
+        membername,
+      } = item;
 
       if (!id || !productId || !memberId) {
         console.warn(`Skipping invalid item:`, item);
@@ -268,7 +272,7 @@ export const insertOrderData = async (req, res) => {
     });
   }
 };
-  
+
 export const searchOrderDataByGmail = async (req, res) => {
   try {
     const gmail = req.params.gmail ?? 0;
@@ -296,7 +300,9 @@ export const searchOrderDataByGmail = async (req, res) => {
       LIMIT $1 OFFSET $2;
     `;
 
-    let rows = (await dbExecution(dataQuery, [`%${gmail}%`,validLimit, offset]))?.rows || [];
+    let rows =
+      (await dbExecution(dataQuery, [`%${gmail}%`, validLimit, offset]))
+        ?.rows || [];
 
     // ✅ Safely parse JSON fields
     const parseJSON = (val) => {
@@ -365,7 +371,6 @@ export const searchOrderDataByGmail = async (req, res) => {
     });
   }
 };
- 
 
 export const UpdateOrderListStatus = async (req, res) => {
   const { id, confirmType, detail } = req.body;
@@ -415,9 +420,8 @@ export const UpdateOrderListStatus = async (req, res) => {
     // 2️⃣ Calculate new wallet balance
     const walletNum = Number(wallet);
     const priceNum = Number(price);
-    
-    if (walletNum < priceNum) {
 
+    if (walletNum < priceNum) {
       return res.status(400).send({
         status: false,
         message: "Insufficient balance in member wallet",
@@ -425,7 +429,7 @@ export const UpdateOrderListStatus = async (req, res) => {
       });
     }
 
-     const amountAfter = walletNum - priceNum;
+    const amountAfter = walletNum - priceNum;
 
     // 3️⃣ Update member wallet
     const updateMember = `
@@ -434,7 +438,10 @@ export const UpdateOrderListStatus = async (req, res) => {
       WHERE id = $1
       RETURNING *;
     `;
-    const memberUpdated = await dbExecution(updateMember, [memberid, amountAfter]);
+    const memberUpdated = await dbExecution(updateMember, [
+      memberid,
+      amountAfter,
+    ]);
 
     // 4️⃣ Update order confirmation
     const updateOrder = `
@@ -443,7 +450,11 @@ export const UpdateOrderListStatus = async (req, res) => {
       WHERE id = $1
       RETURNING *;
     `;
-    const orderUpdated = await dbExecution(updateOrder, [id, confirmType, detail]);
+    const orderUpdated = await dbExecution(updateOrder, [
+      id,
+      confirmType,
+      detail,
+    ]);
 
     // 5️⃣ Insert payment log
     const insertLog = `
@@ -485,7 +496,6 @@ export const UpdateOrderListStatus = async (req, res) => {
     });
   }
 };
-  
 
 export const queryAllProductByMemberId = async (req, res) => {
   try {
@@ -522,7 +532,8 @@ export const queryAllProductByMemberId = async (req, res) => {
       LIMIT $1 OFFSET $2;
     `;
 
-    let rows = (await dbExecution(dataQuery, [id,validLimit, offset]))?.rows || [];
+    let rows =
+      (await dbExecution(dataQuery, [id, validLimit, offset]))?.rows || [];
 
     // ✅ Safely parse JSON columns and image list
     rows = rows.map((r) => {
@@ -591,7 +602,6 @@ export const queryAllProductByMemberId = async (req, res) => {
     });
   }
 };
- 
 
 export const queryAllMemberWhoBeLongToAdminId = async (req, res) => {
   try {
@@ -627,7 +637,8 @@ m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadm
       LIMIT $1 OFFSET $2;
     `;
 
-    let rows = (await dbExecution(dataQuery, [id,validLimit, offset]))?.rows || [];
+    let rows =
+      (await dbExecution(dataQuery, [id, validLimit, offset]))?.rows || [];
 
     // ✅ Safely parse JSON columns and image list
     rows = rows.map((r) => {
@@ -645,10 +656,10 @@ m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadm
         }
       };
 
-    //   // ✅ Parse the 3 JSON-like fields
-    //   const size = parseJSON(r.size);
-    //   const productdetail = parseJSON(r.productdetail);
-    //   const detail = parseJSON(r.detail);
+      //   // ✅ Parse the 3 JSON-like fields
+      //   const size = parseJSON(r.size);
+      //   const productdetail = parseJSON(r.productdetail);
+      //   const detail = parseJSON(r.detail);
 
       // ✅ Parse images into clean URLs
       let imgs = [];
@@ -698,8 +709,7 @@ m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadm
 };
 
 export const normal_update_order_list_into_to_failed = async (req, res) => {
-
-  const { id,status,detail } = req.body;
+  const { id, status, detail } = req.body;
 
   if (!id) {
     return res.status(400).send({
@@ -710,7 +720,6 @@ export const normal_update_order_list_into_to_failed = async (req, res) => {
   }
 
   try {
- 
     // ✅ Update the member's profile image (just first image)
     const updateOrderStatus = `
        UPDATE public.tborderpd
@@ -719,7 +728,7 @@ export const normal_update_order_list_into_to_failed = async (req, res) => {
       RETURNING *;
     `;
 
-    const result = await dbExecution(updateOrderStatus, [id,status, detail]);
+    const result = await dbExecution(updateOrderStatus, [id, status, detail]);
 
     if (!result || result.rowCount === 0) {
       return res.status(404).send({

@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-export const logEvents = async (message, logName) => {
+export const logEvents = async (message, logName = "app.log") => {
   const stamp = `${format(new Date(), "yyyy-MM-dd HH:mm:ss")}`;
   const logDetail = `${stamp}\t${message}\n`;
 
@@ -16,7 +16,7 @@ export const logEvents = async (message, logName) => {
       await fsPromises.mkdir(path.join(__dirname, "..", "logs"));
     }
 
-    const logFilePath = path.join(__dirname, "..", "logs", logName);
+    const logFilePath = path.join(__dirname, "..", "logs", String(logName));
     const maxSizeGB = 1;
 
     const stats = await fsPromises.stat(logFilePath).catch(() => null);
@@ -58,7 +58,3 @@ export const logger = (req, res, next) => {
 
   next();
 };
-
-
-
-

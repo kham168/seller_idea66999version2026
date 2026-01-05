@@ -84,8 +84,8 @@ io.on("connection", (socket) => {
 
   // handle message sending
   socket.on("send_message", async (payload, ack) => {
-    console.log("==========================");
-    console.log(payload);
+   // console.log("==========================");
+   // console.log(payload);
     try {
       const { conversationId, body, type = "text", attachments = [] } = payload;
 
