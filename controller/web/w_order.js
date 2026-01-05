@@ -16,7 +16,7 @@ export const queryOrderDataOne = async (req, res) => {
 
     // ✅ Fetch data by id
     const dataQuery = `
-      SELECT id, productid, type, size, price, custaddress, incomerate, 
+      SELECT id, productname as productname, type, size, price, custaddress, incomerate, 
              memberid,membername, cdate, membercf, detail, cfdate
       FROM public.tborderpd
       WHERE memberId is not null and id = $1
@@ -56,7 +56,7 @@ export const queryOrderDataOne = async (req, res) => {
     // ✅ Build grouped response
     const custAddress = rows[0].custaddress;
     const data = rows.map((r) => ({
-      productId: r.productid,
+      productId: r.productid ?? r.productname ?? null,
       type: r.type,
       size: r.size,
       price: r.price,
@@ -88,9 +88,7 @@ export const queryOrderDataOne = async (req, res) => {
   }
 };
 
-
 export const queryOrderDataAll = async (req, res) => {
-
   try {
     const page = req.query.page ?? 0;
     const limit = req.query.limit ?? 15;
@@ -109,7 +107,7 @@ export const queryOrderDataAll = async (req, res) => {
 
     // ✅ Fetch paginated data
     const dataQuery = `
-      SELECT id, productid, type, size, price, custaddress, incomerate, 
+      SELECT id, productname as productname, type, size, price, custaddress, incomerate, 
              memberid,membername, cdate, membercf, detail, cfdate
       FROM public.tborderpd where memberId is not null
       ORDER BY cdate DESC
@@ -150,7 +148,7 @@ export const queryOrderDataAll = async (req, res) => {
       }
 
       grouped[r.id].data.push({
-        productId: r.productid,
+        productId: r.productid ?? r.productname ?? null,
         type: r.type,
         size: r.size,
         price: r.price,
@@ -185,7 +183,6 @@ export const queryOrderDataAll = async (req, res) => {
   }
 };
 
-
 export const insertOrderData = async (req, res) => {
   try {
     const { id, custAddress, data } = req.body;
@@ -207,17 +204,18 @@ export const insertOrderData = async (req, res) => {
     // ✅ Define base insert SQL
     const query = `
       INSERT INTO public.tborderpd (
-        id, productid, type, size, price, custaddress, incomerate, memberid,membername, cdate
+        id, productname, type, size, price, custaddress, incomerate, memberid,membername, cdate
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9, NOW())
       RETURNING *;
     `;
-     
+
     const insertedRows = [];
 
     // ✅ Insert each order item one by one (or use batch if needed)
     for (const item of data) {
-      const { productId, type, size, price, incomeRate, memberId,membername } = item;
+      const { productId, type, size, price, incomeRate, memberId, membername } =
+        item;
 
       if (!id || !productId || !memberId) {
         console.warn(`Skipping invalid item:`, item);

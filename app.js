@@ -29,7 +29,7 @@ app.use(express.json());
 // ✅ apply cors with your options
 app.use(cors());
 // app.use(cors(corsOptions));
-
+app.use(express.static(path.join(__dirname, "./channelImage")));
 app.use(express.static(path.join(__dirname, "./productImage")));
 app.use(express.static(path.join(__dirname, "./refillwalletimage")));
 app.use("/", express.static(path.join(process.cwd(), "uploads")));

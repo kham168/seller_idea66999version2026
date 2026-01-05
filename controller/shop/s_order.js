@@ -1,9 +1,7 @@
-
 import { dbExecution } from "../../dbconfig/dbconfig.js";
 
 export const queryOrderDataAllByMemberId = async (req, res) => {
   try {
-
     const mbid = req.query.mbid ?? 0;
     const page = req.query.page ?? 0;
     const limit = req.query.limit ?? 15;
@@ -28,7 +26,8 @@ export const queryOrderDataAllByMemberId = async (req, res) => {
       LIMIT $2 OFFSET $3;
     `;
 
-    let rows = (await dbExecution(dataQuery, [mbid,validLimit, offset]))?.rows || [];
+    let rows =
+      (await dbExecution(dataQuery, [mbid, validLimit, offset]))?.rows || [];
 
     // ✅ Safely parse JSON fields
     const parseJSON = (val) => {
@@ -62,7 +61,7 @@ export const queryOrderDataAllByMemberId = async (req, res) => {
       }
 
       grouped[r.id].data.push({
-        productId: r.productid,
+        productId: r.productid ?? r.productname ?? null,
         type: r.type,
         size: r.size,
         price: r.price,
@@ -96,9 +95,3 @@ export const queryOrderDataAllByMemberId = async (req, res) => {
     });
   }
 };
-
-
-
-
-
-

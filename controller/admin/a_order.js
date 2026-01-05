@@ -55,7 +55,7 @@ export const queryOrderDataOne = async (req, res) => {
     // ✅ Build grouped response
     const custAddress = rows[0].custaddress;
     const data = rows.map((r) => ({
-      productId: r.productid,
+      productId: r.productid ?? r.productname ?? null,
       type: r.type,
       size: r.size,
       price: r.price,
@@ -107,7 +107,7 @@ export const queryOrderDataAll = async (req, res) => {
 
     // ✅ Fetch paginated data
     const dataQuery = `
-  SELECT id, productname, type, size, price, qty, totalprice, incomerate, custgmail, custaddress, memberid, membername, cdate, membercf, detail, cfdate
+  SELECT id, productname as productname, type, size, price, qty, totalprice, incomerate, custgmail, custaddress, memberid, membername, cdate, membercf, detail, cfdate
 	FROM public.tborderpd ORDER BY cdate DESC
       LIMIT $1 OFFSET $2;
     `;
@@ -146,7 +146,7 @@ export const queryOrderDataAll = async (req, res) => {
       }
 
       grouped[r.id].data.push({
-        productId: r.productid,
+        productId: r.productid ?? r.productname ?? null,
         type: r.type,
         size: r.size,
         price: r.price,
@@ -203,7 +203,7 @@ export const insertOrderData = async (req, res) => {
     // ✅ Define base insert SQL
     const query = `
       INSERT INTO public.tborderpd (
-        id, productid, type, size, price,incomerate,custgmail, custaddress, memberid,membername, cdate
+        id, productname, type, size, price,incomerate,custgmail, custaddress, memberid,membername, cdate
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9,$10, NOW())
       RETURNING *;
@@ -293,7 +293,7 @@ export const searchOrderDataByGmail = async (req, res) => {
 
     // ✅ Fetch paginated data
     const dataQuery = `
-      SELECT id, productid, type, size, price,incomerate ,custgmail,custaddress , 
+      SELECT id, productname as productname, type, size, price,incomerate ,custgmail,custaddress , 
              memberid,membername, cdate, membercf, detail, cfdate
       FROM public.tborderpd  where custgmail ILIKE $1
       ORDER BY cdate DESC
@@ -336,7 +336,7 @@ export const searchOrderDataByGmail = async (req, res) => {
       }
 
       grouped[r.id].data.push({
-        productId: r.productid,
+        productId: r.productid ?? r.productname ?? null,
         type: r.type,
         size: r.size,
         price: r.price,
