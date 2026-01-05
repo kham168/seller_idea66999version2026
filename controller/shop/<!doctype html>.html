@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Socket emit example</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; background:#f6f8fa; }
+    .card { background:#fff; padding:20px 24px; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.06); width:380px; }
+    h1 { font-size:18px; margin:0 0 12px; }
+    p { margin:8px 0; color:#444; }
+    .status { font-weight:600; }
+    input, button { width:100%; padding:10px 12px; margin-top:8px; border-radius:8px; border:1px solid #ddd; font-size:14px; }
+    button { cursor:pointer; background:#0366d6; color:#fff; border:none; }
+    pre { background:#f3f4f6; padding:10px; border-radius:8px; overflow:auto; max-height:160px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Socket.IO — emit "send_message"</h1>
+    <p>Server URL: <code>http://localhost:1789/</code></p>
+
+    <label for="msg">Message to send</label>
+    <input id="msg" type="text" value="Hello from client" />
+
+    <button id="sendBtn">Emit "send_message"</button>
+
+    <p class="status">Connection: <span id="conn">—</span></p>
+
+    <p>Server responses / logs:</p>
+    <pre id="log">(no logs yet)</pre>
+  </div>
+
+  <!-- Socket.IO client from CDN -->
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+
+  <script>
+    (function () {
+      const serverUrl = 'http://localhost:1789';
+      const logEl = document.getElementById('log');
+      const connEl = document.getElementById('conn');
+      const sendBtn = document.getElementById('sendBtn');
+      const msgInput = document.getElementById('msg');
+
+      // create socket (auto-connect)
+      const socket = io(serverUrl, {
+        // if your server requires transports or auth, add here
+        // transports: ['websocket'],
+      });
+
+      function addLog(...things) {
+        const text = things.map(t => (typeof t === 'object' ? JSON.stringify(t) : String(t))).join(' ');
+        logEl.textContent = text + '\n' + logEl.textContent;
+      }
+
+      socket.on('connect', () => {
+        connEl.textContent = 'connected (id: ' + socket.id + ')';
+        addLog('[connected]', 'id=' + socket.id);
+
+        // Emit once automatically on connect (with optional ack)
+        const payload = { text: msgInput.value, ts: new Date().toISOString() };
+        socket.emit('send_message', payload, (ack) => {
+          addLog('[auto-emit ack]', ack);
+        });
+        addLog('[auto-emit]', payload);
+      });
+
+      socket.on('connect_error', (err) => {
+        connEl.textContent = 'connect_error';
+        addLog('[connect_error]', err && err.message ? err.message : err);
+      });
+
+      socket.on('disconnect', (reason) => {
+        connEl.textContent = 'disconnected (' + reason + ')';
+        addLog('[disconnect]', reason);
+      });
+
+      // Optional: log any server-side events you care about
+      socket.on('message', (data) => {
+        addLog('[message]', data);
+      });
+
+      socket.on('server_log', (data) => {
+        addLog('[server_log]', data);
+      });
+
+      // manual send button (emits 'send_message' with callback ack)
+      sendBtn.addEventListener('click', () => {
+        const payload = { text: msgInput.value, ts: new Date().toISOString() };
+        // send with ack callback
+        socket.emit('send_message', payload, (ack) => {
+          addLog('[manual emit ack]', ack);
+        });
+        addLog('[manual emit]', payload);
+      });
+
+      // safety: if socket fails to connect after some time, show status
+      setTimeout(() => {
+        if (!socket.connected) {
+          connEl.textContent = 'not connected (check server at ' + serverUrl + ')';
+          addLog('[status] socket not connected after timeout');
+        }
+      }, 3000);
+    })();
+  </script>
+</body>
+</html>

@@ -1,5 +1,3 @@
- 
-
 import dotevn from "dotenv";
 dotevn.config();
 import { logEvents } from "../middleware/logEvent.js";
@@ -17,6 +15,24 @@ const dbPool = new Pool({
   max: 100,
   allowExitOnIdle: true,
 });
+
+// export const dbMiddleware = (req, res, next) => {
+//   console.log("HHHHHHHH");
+//   dbPool.connect((err, client, success) => {
+//     if (err) {
+//       return next(err);
+//     }
+
+//     //attach db to the client req
+//     req.dbClient = client;
+
+//     //release client back to the pool
+//     req.releaseClient = success;
+
+//     //go to next middleware
+//     next();
+//   });
+// };
 
 export const dbExecution = async (query, params = []) => {
   const client = await dbPool.connect();
@@ -37,6 +53,3 @@ export const dbExecution = async (query, params = []) => {
     if (client) client.release();
   }
 };
-
- 
-
