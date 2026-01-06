@@ -9,6 +9,7 @@ import {
 import {
   queryAllProductByMemberId,
   queryAllProductWhichOneNoJoinWithId,
+  queryAllProductWhichOneNoJoinWithIdNewData,
   insertJoinProductId,
   UnJoinProduct,
 } from "../controller/shop/s_product.js";
@@ -25,7 +26,8 @@ const route = Route();
 
 route.get("/getProductList", queryAllProductByMemberId);
 route.get("/getOrderList", queryOrderDataAllByMemberId);
-route.get("/wantJoinProduct", queryAllProductWhichOneNoJoinWithId);
+route.get("/toJoinProduct", queryAllProductWhichOneNoJoinWithId);
+route.get("/toJoinProductNew", queryAllProductWhichOneNoJoinWithIdNewData);
 route.get("/getMemberData", queryMemberData);
 route.post("/memberRegister", member_register);
 route.post("/memberLogin", memberLogin);

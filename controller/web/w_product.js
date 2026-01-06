@@ -3,8 +3,8 @@ import { dbExecution } from "../../dbconfig/dbconfig.js";
 
 // query muas data all or select top 15
 export const queryAll = async (req, res) => {
+  // =====> user for web admin
   try {
-    const id = req.query.id ?? 0;
     const page = req.query.page ?? 0;
     const limit = req.query.limit ?? 15;
 
@@ -16,9 +16,9 @@ export const queryAll = async (req, res) => {
     const countQuery = `
       SELECT COUNT(*) AS total
       FROM public.tbproduct p
-      WHERE channel=$1 and p.status = '1';
+      WHERE p.status = '1';
     `;
-    const countResult = await dbExecution(countQuery, [id]);
+    const countResult = await dbExecution(countQuery, []);
     const total = parseInt(countResult.rows[0]?.total || 0, 10);
 
     const baseUrl = "http://localhost:1789/";
@@ -28,12 +28,11 @@ export const queryAll = async (req, res) => {
       SELECT channel, id, modelname, type, price1, price2, size, 
              productdetail, detail, image, video, star, totalsell, status, cdate
       FROM public.tbproduct 
-      WHERE channel=$1 and status='1' ORDER BY cdate DESC
-      LIMIT $2 OFFSET $3;
+      WHERE status='1' ORDER BY cdate DESC
+      LIMIT $1 OFFSET $2;
     `;
 
-    let rows =
-      (await dbExecution(dataQuery, [id, validLimit, offset]))?.rows || [];
+    let rows = (await dbExecution(dataQuery, [validLimit, offset]))?.rows || [];
 
     // ✅ Safely parse JSON columns and image list
     rows = rows.map((r) => {
@@ -145,7 +144,7 @@ export const queryChannelData = async (req, res) => {
           return val;
         }
       };
-  
+
       // ✅ Parse images into clean URLs
       let imgs = [];
       if (r.image) {

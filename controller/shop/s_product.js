@@ -2,7 +2,6 @@ import { dbExecution } from "../../dbconfig/dbconfig.js";
 
 export const queryAllProductByMemberId = async (req, res) => {
   try {
-    
     const id = req.query.id ?? 0;
     const page = req.query.page ?? 0;
     const limit = req.query.limit ?? 15;
@@ -13,11 +12,14 @@ export const queryAllProductByMemberId = async (req, res) => {
 
     // Count total
     const countQuery = `
-       SELECT count(*) AS total
-	FROM public.tbproduct  p inner join
-	public.tbmemberjoinproduct j on j.productid=p.id
-	inner join public.tbmember m on m.id=j.memberid
-      WHERE m.id = $1 and  p.status = '1' and j.status='1';
+      select count(*) AS total from (
+   SELECT j.memberid, p.*
+   FROM public.tbproduct p
+   LEFT JOIN public.tbmemberjoinproduct j 
+  ON j.productid = p.id
+  AND j.memberid = $1 and j.status='1'
+   where p.status = '1'
+    )s where s.memberid is not null;
     `;
     const countResult = await dbExecution(countQuery, [id]);
     const total = parseInt(countResult.rows[0]?.total || 0, 10);
@@ -26,14 +28,15 @@ export const queryAllProductByMemberId = async (req, res) => {
 
     // Fetch paginated data
     const dataQuery = `
-    SELECT m.id,m.name, channel, p.id, p.modelname, p.type, price1, 
-	price2, p.size, p.productdetail, p.detail, p.image, 
-	p.video, p.star, p.totalsell, p.cdate
-	FROM public.tbproduct  p inner join
-	public.tbmemberjoinproduct j on j.productid=p.id
-	inner join public.tbmember m on m.id=j.memberid
-	where m.id='1' and  and p.status = '1' and j.status='1'
-      LIMIT $1 OFFSET $2;
+   select * from (
+   SELECT j.memberid, p.*
+   FROM public.tbproduct p
+   LEFT JOIN public.tbmemberjoinproduct j 
+   ON j.productid = p.id
+   AND j.memberid = $1 and j.status='1'
+   where p.status = '1'
+    )s where s.memberid is not null
+      LIMIT $2 OFFSET $3;
     `;
 
     let rows =
@@ -119,15 +122,124 @@ export const queryAllProductWhichOneNoJoinWithId = async (req, res) => {
 
     // Count total
     const countQuery = `
-      select count(*) As total from (
-    SELECT m.id as DD, p.channel, p.id, p.modelname, p.type, p.price1, 
-	p.price2, p.size, p.productdetail, p.detail, p.image, p.video, p.star, 
-	p.totalsell, p.status, p.cdate
-	FROM public.tbproduct p left join 
-	public.tbmemberjoinproduct j on j.productid=p.id
-	inner join public.tbmember m on m.id=j.memberid
-	where m.id=$1 and p.status = '1' and j.status='1'
-    )s where s.DD is null;
+       select count(*) As total from (
+   SELECT j.memberid, p.*
+   FROM public.tbproduct p
+   LEFT JOIN public.tbmemberjoinproduct j 
+  ON j.productid = p.id
+  AND j.memberid = $1
+	where p.status = '1' and p.cdate <= current_date -1
+    )s where s.memberid is null;
+    `;
+    const countResult = await dbExecution(countQuery, [id]);
+    const total = parseInt(countResult.rows[0]?.total || 0, 10);
+
+    const baseUrl = "http://localhost:1789/";
+
+    // Fetch paginated data
+    const dataQuery = `
+     select * from (
+   SELECT j.memberid, p.*
+   FROM public.tbproduct p
+   LEFT JOIN public.tbmemberjoinproduct j 
+  ON j.productid = p.id
+  AND j.memberid = $1
+	where p.status = '1' and p.cdate <= current_date -1
+    )s where s.memberid is null 
+    LIMIT $2 OFFSET $3;
+    `;
+
+    let rows =
+      (await dbExecution(dataQuery, [id, validLimit, offset]))?.rows || [];
+
+    // ✅ Safely parse JSON columns and image list
+    rows = rows.map((r) => {
+      const parseJSON = (val) => {
+        if (!val) return null;
+        try {
+          // handle cases: already object, JSON string, or quoted JSON string
+          if (typeof val === "object") return val;
+          if (typeof val === "string") {
+            const clean = val.replace(/^"|"$/g, "").replace(/\\"/g, '"');
+            return JSON.parse(clean);
+          }
+        } catch {
+          return val;
+        }
+      };
+
+      // ✅ Parse the 3 JSON-like fields
+      const size = parseJSON(r.size);
+      const productdetail = parseJSON(r.productdetail);
+      const detail = parseJSON(r.detail);
+
+      // ✅ Parse images into clean URLs
+      let imgs = [];
+      if (r.image) {
+        try {
+          if (Array.isArray(r.image)) {
+            imgs = r.image;
+          } else if (typeof r.image === "string") {
+            const clean = r.image.replace(/[{}"]/g, "");
+            imgs = clean.split(",").map((i) => baseUrl + i.trim());
+          }
+        } catch {
+          imgs = [];
+        }
+      }
+
+      return {
+        ...r,
+        size,
+        productdetail,
+        detail,
+        image: imgs,
+      };
+    });
+
+    // ✅ Response
+    res.status(200).send({
+      status: true,
+      message: rows.length > 0 ? "Query successful" : "No data found",
+      data: rows,
+      pagination: {
+        page: validPage,
+        limit: validLimit,
+        total,
+        totalPages: Math.ceil(total / validLimit),
+      },
+    });
+  } catch (error) {
+    console.error("Error in queryaAll:", error);
+    res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      data: [],
+      error: error.message,
+    });
+  }
+};
+
+export const queryAllProductWhichOneNoJoinWithIdNewData = async (req, res) => {
+  try {
+    const id = req.query.id ?? 0;
+    const page = req.query.page ?? 0;
+    const limit = req.query.limit ?? 15;
+
+    const validPage = Math.max(parseInt(page, 10) || 0, 0);
+    const validLimit = Math.max(parseInt(limit, 10) || 15, 1);
+    const offset = validPage * validLimit;
+
+    // Count total
+    const countQuery = `
+     select count(*) As total from (
+   SELECT j.memberid, p.*
+   FROM public.tbproduct p
+   LEFT JOIN public.tbmemberjoinproduct j 
+  ON j.productid = p.id
+  AND j.memberid = $1
+	where p.status = '1' and p.cdate >= current_date -1
+    )s where s.memberid is null;
     `;
     const countResult = await dbExecution(countQuery, [id]);
     const total = parseInt(countResult.rows[0]?.total || 0, 10);
@@ -137,15 +249,14 @@ export const queryAllProductWhichOneNoJoinWithId = async (req, res) => {
     // Fetch paginated data
     const dataQuery = `
     select * from (
-    SELECT m.id as DD, p.channel, p.id, p.modelname, p.type, p.price1, 
-	p.price2, p.size, p.productdetail, p.detail, p.image, p.video, p.star, 
-	p.totalsell, p.status, p.cdate
-	FROM public.tbproduct p left join 
-	public.tbmemberjoinproduct j on j.productid=p.id
-	inner join public.tbmember m on m.id=j.memberid
-	where m.id=$1 and p.status = '1' and j.status='1'
-    )s where s.DD is null
-    LIMIT $1 OFFSET $2;
+   SELECT j.memberid, p.*
+   FROM public.tbproduct p
+   LEFT JOIN public.tbmemberjoinproduct j 
+  ON j.productid = p.id
+  AND j.memberid = $1
+	where p.status = '1' and p.cdate <= current_date -1
+    )s where s.memberid is null 
+    LIMIT $2 OFFSET $3;
     `;
 
     let rows =
