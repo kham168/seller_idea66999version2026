@@ -7,6 +7,7 @@ import {
   UpdateOrderListStatus,
   queryAllProductByMemberId,
   queryAllMemberWhoBeLongToAdminId,
+  queryAllMemberActiveForSupperAdmin,
   normal_update_order_list_into_to_failed,
 } from "../controller/admin/a_order.js";
 import {
@@ -22,11 +23,12 @@ const router = Router();
 
 router.get("/getOrderOne", queryOrderDataOne);
 router.get("/getOrderAll", queryOrderDataAll);
-router.get("/adminOrder", insertOrderData);
+router.post("/adminOrder", insertOrderData);
 router.get("/searchOrderByGmail", searchOrderDataByGmail);
 router.put("/adminUpdateOrderToTrue", UpdateOrderListStatus);
 router.get("/getProductByMemberID", queryAllProductByMemberId);
 router.get("/getMemberListByAdminId", queryAllMemberWhoBeLongToAdminId);
+router.get("/getMemberListForSupperAdmin", queryAllMemberActiveForSupperAdmin);
 router.put("/updateOrderToFalse", normal_update_order_list_into_to_failed);
 
 router.post("/adminLogin", adminLogin);

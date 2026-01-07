@@ -1,5 +1,7 @@
 import { dbExecution } from "../../dbconfig/dbconfig.js";
- 
+import jwt from "jsonwebtoken"; 
+import bcrypt from "bcrypt";
+
 
 export const adminLogin = async (req, res) => {
   const { gmail, password } = req.body; // 👈 safer than params for login
@@ -77,7 +79,7 @@ export const queryAdminData = async (req, res) => {
   try {
    
     const querySelect = `
-    SELECT id, name, lastname, gender, usertype, gmail,
+    SELECT id, name, usertype, gmail,
 password, wallet, customergroup, status, cdate
 	FROM public.tbadminuser where id=$1;
     `;
@@ -111,7 +113,7 @@ password, wallet, customergroup, status, cdate
 
 
 export const admin_register = async (req, res) => {
-  const { 	id, name, gmail } = req.body;
+  const { 	id, name, gmail,password } = req.body;
 
   if (!id || !password || !gmail) {
     return res.status(400).send({
@@ -125,7 +127,7 @@ export const admin_register = async (req, res) => {
     // ✅ 2. Check if Gmail already exists
     const checkMailQuery = `
       SELECT COUNT(*) AS qty
-      FROM public.tbmember
+      FROM public.tbadminuser
       WHERE gmail = $1 AND status = '1';
     `;
     const checkResult = await dbExecution(checkMailQuery, [gmail]);
@@ -141,14 +143,14 @@ export const admin_register = async (req, res) => {
     }
 
     // ✅ 3. Encrypt the password before insert
-    const saltRounds = 16;
+    const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     // ✅ 4. Insert new member
     const insertQuery = `
      INSERT INTO public.tbadminuser(
-	id, name, usertype, gmail, password , status, cdate)
-	VALUES ($1, $2, 'admin', $3, $4, '1',NEW());
+	id, name, usertype, gmail, password_hash , status, cdate)
+	VALUES ($1, $2, 'admin', $3, $4, '1', NOW())
       RETURNING *;
     `;
 

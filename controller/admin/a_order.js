@@ -625,16 +625,15 @@ export const queryAllMemberWhoBeLongToAdminId = async (req, res) => {
 
     const baseUrl = "http://localhost:1789/";
 
-    // Fetch paginated data
     const dataQuery = `
-    SELECT a.id, a.name, a.lastname, m.id, m.name, m.lastname, m.gender, 
+    SELECT a.id, a.name, m.id, m.name, m.lastname, m.gender, 
 m.gmail, m.country, 
-m.state, m.profileimage, m.bankaccount1, m.bankaccount2, m.bankaccount3, 
+m.state, m.profileimage, m.bankaccount1, m.bankaccount2, 
 m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadmin, m.cdate
  FROM public.tbmember m inner join
  public.tbadminuser a on a.id=m.becustofadmin
  where a.id=$1 and m.status='1'
-      LIMIT $1 OFFSET $2;
+      LIMIT $2 OFFSET $3;
     `;
 
     let rows =
@@ -656,32 +655,115 @@ m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadm
         }
       };
 
-      //   // ✅ Parse the 3 JSON-like fields
-      //   const size = parseJSON(r.size);
-      //   const productdetail = parseJSON(r.productdetail);
-      //   const detail = parseJSON(r.detail);
-
       // ✅ Parse images into clean URLs
-      let imgs = [];
-      if (r.image) {
-        try {
-          if (Array.isArray(r.image)) {
-            imgs = r.image;
-          } else if (typeof r.image === "string") {
-            const clean = r.image.replace(/[{}"]/g, "");
-            imgs = clean.split(",").map((i) => baseUrl + i.trim());
-          }
-        } catch {
-          imgs = [];
+       let profileImg = null;
+
+      if (r.profileimage) {
+        if (typeof r.profileimage === "string") {
+          const clean = r.profileimage
+            .replace(/[{}"]/g, "")
+            .split(",")[0]
+            ?.trim();
+          profileImg = clean ? baseUrl + clean : null;
         }
       }
 
       return {
         ...r,
-        size,
-        productdetail,
-        detail,
-        image: imgs,
+        profileimage: profileImg,
+      };
+    });
+
+    // ✅ Response
+    res.status(200).send({
+      status: true,
+      message: rows.length > 0 ? "Query successful" : "No data found",
+      data: rows,
+      pagination: {
+        page: validPage,
+        limit: validLimit,
+        total,
+        totalPages: Math.ceil(total / validLimit),
+      },
+    });
+  } catch (error) {
+    console.error("Error in queryaAll:", error);
+    res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      data: [],
+      error: error.message,
+    });
+  }
+};
+
+export const queryAllMemberActiveForSupperAdmin = async (req, res) => {
+  try {
+    const page = req.query.page ?? 0;
+    const limit = req.query.limit ?? 15;
+
+    const validPage = Math.max(parseInt(page, 10) || 0, 0);
+    const validLimit = Math.max(parseInt(limit, 10) || 15, 1);
+    const offset = validPage * validLimit;
+
+    // Count total
+    const countQuery = `
+    SELECT count(*) AS total
+ FROM public.tbmember m inner join
+ public.tbadminuser a on a.id=m.becustofadmin
+ where m.status='1';
+    `;
+    const countResult = await dbExecution(countQuery, []);
+    const total = parseInt(countResult.rows[0]?.total || 0, 10);
+
+    const baseUrl = "http://localhost:1789/";
+
+    // Fetch paginated data
+    const dataQuery = `
+    SELECT a.id, a.name, m.id, m.name, m.lastname, m.gender, 
+m.gmail, m.country, 
+m.state, m.profileimage, m.bankaccount1, m.bankaccount2, 
+m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadmin, m.cdate
+ FROM public.tbmember m inner join
+ public.tbadminuser a on a.id=m.becustofadmin
+ where m.status='1' order by m.cdate desc
+      LIMIT $1 OFFSET $2;
+    `;
+
+    let rows = (await dbExecution(dataQuery, [validLimit, offset]))?.rows || [];
+
+    // ✅ Safely parse JSON columns and image list
+    rows = rows.map((r) => {
+      const parseJSON = (val) => {
+        if (!val) return null;
+        try {
+          // handle cases: already object, JSON string, or quoted JSON string
+          if (typeof val === "object") return val;
+          if (typeof val === "string") {
+            const clean = val.replace(/^"|"$/g, "").replace(/\\"/g, '"');
+            return JSON.parse(clean);
+          }
+        } catch {
+          return val;
+        }
+      };
+
+      // ✅ Parse images into clean URLs
+      let profileImg = null;
+
+      if (r.profileimage) {
+        if (typeof r.profileimage === "string") {
+          const clean = r.profileimage
+            .replace(/[{}"]/g, "")
+            .split(",")[0]
+            ?.trim();
+          profileImg = clean ? baseUrl + clean : null;
+        }
+      }
+
+      return {
+        ...r,
+        profileimage: profileImg,
       };
     });
 
