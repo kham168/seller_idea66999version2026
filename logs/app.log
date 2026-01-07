@@ -143,3 +143,12 @@ m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadm
     
 
 Params: 15,0
+2026-01-07 16:11:28	Query: 
+      INSERT INTO public.tblogsmemberpayment(
+        id, memberid, type, amount, status,account, cdate
+      )
+      VALUES ($1, $2, 'withdraw', $3, $4, NOW())
+      RETURNING *;
+    
+
+Params: wd1767777087905,1,3000,pending,6666

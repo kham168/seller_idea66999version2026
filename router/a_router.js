@@ -17,6 +17,7 @@ import {
   UpdateAdminStatus,queryAdminAll
 } from "../controller/admin/a_login.js";
 import {insertData} from "../controller/admin/a_product.js";
+import {StaffConfirmPayForMemberPaymentAndWithdraw} from "../controller/admin/a_payment.js";
 import { uploadImage } from "../middleware/product.uploadimage.js";
 //import { protect } from "../middleware/token.js";
 const router = Router();
@@ -30,7 +31,7 @@ router.get("/getProductByMemberID", queryAllProductByMemberId);
 router.get("/getMemberListByAdminId", queryAllMemberWhoBeLongToAdminId);
 router.get("/getMemberListForSupperAdmin", queryAllMemberActiveForSupperAdmin);
 router.put("/updateOrderToFalse", normal_update_order_list_into_to_failed);
-
+router.post("/adminUpdatePayment", StaffConfirmPayForMemberPaymentAndWithdraw);
 router.post("/adminLogin", adminLogin);
 router.get("/getAdminDataById", queryAdminData);
 router.post("/adminRegister", admin_register);

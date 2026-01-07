@@ -6,7 +6,6 @@ import { dbExecution } from "../../dbconfig/dbconfig.js";
 export const insertData = async (req, res) => {
   const {
     channel,
-    id,
     name,
     type,
     price1,
@@ -17,7 +16,9 @@ export const insertData = async (req, res) => {
   } = req.body;
 
   // ✅ Validate required fields
-  if (!id || !name || !price1 || !detail) {
+  const id = "p" + Date.now();
+
+  if (!id || !name || !price2 || !detail) {
     return res.status(400).send({
       status: false,
       message:

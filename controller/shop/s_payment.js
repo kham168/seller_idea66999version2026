@@ -1,7 +1,7 @@
+import { generateKey } from "crypto";
 import { dbExecution } from "../../dbconfig/dbconfig.js";
 
 export const query_logs_adjust_and_payment = async (req, res) => {
-
   //const { id } = req.body; // memberid
   const id = req.query.id ?? 0;
 
@@ -16,17 +16,10 @@ export const query_logs_adjust_and_payment = async (req, res) => {
   try {
     // 1️⃣ Query all logs for this member
     const querySelect = `
-      SELECT
-        orderid,
-        type,
-        amount,
-        creditb,
-        creditf,
-        status,
-        cdate
-      FROM public.tblogsmemberpayment 
-      WHERE memberid = $1
-      ORDER BY cdate DESC;
+SELECT id, memberid, orderid, type, amount, 
+confirmamount, status, account,
+imagepayment, cdate
+	FROM public.tblogsmemberpayment order by cdate desc;
     `;
 
     const selectResult = await dbExecution(querySelect, [id]);
@@ -61,10 +54,19 @@ export const query_logs_adjust_and_payment = async (req, res) => {
 export const member_refill_wallet = async (req, res) => {
   const { id, amount } = req.body;
 
-  if (!id || !amount) {
+  if (!id || amount == null) {
     return res.status(400).send({
       status: false,
       message: "Missing required fields: id or amount",
+      data: [],
+    });
+  }
+
+  const refillAmount = Number(amount);
+  if (isNaN(refillAmount) || refillAmount <= 0) {
+    return res.status(400).send({
+      status: false,
+      message: "Invalid refill amount",
       data: [],
     });
   }
@@ -76,26 +78,24 @@ export const member_refill_wallet = async (req, res) => {
       : [];
 
   try {
-    // Generate a unique ID for this refill record
-    // const logId = `refill_${Date.now()}`;
+    const generateId = "rf" + Date.now();
 
-    // Insert payment/refill log
     const insertLog = `
       INSERT INTO public.tblogsmemberpayment(
-        id, memberid, type, amount, imagepayment, cdate
+        id, memberid, type, amount, status, imagepayment, cdate
       )
-      VALUES ('refill1', $1, 'refillWallet', $2, $3, NOW())
+      VALUES ($1, $2, 'refill', $3, $4, $5, NOW())
       RETURNING *;
     `;
 
     const logInserted = await dbExecution(insertLog, [
-      // logId,
-      id,
-      amount,
-      imageArray,
+      generateId,      // id
+      id,              // memberid
+      refillAmount,    // amount
+      'pending',       // status
+      imageArray       // imagepayment
     ]);
 
-    // Check if insert succeeded
     if (!logInserted || logInserted.rowCount === 0) {
       return res.status(400).send({
         status: false,
@@ -104,10 +104,9 @@ export const member_refill_wallet = async (req, res) => {
       });
     }
 
-    // ✅ Return success
     return res.status(200).send({
       status: true,
-      message: "request refill successfully",
+      message: "Request refill successfully",
       data: logInserted.rows[0],
     });
   } catch (error) {
@@ -121,36 +120,46 @@ export const member_refill_wallet = async (req, res) => {
   }
 };
 
-export const member_withdraw_credit = async (req, res) => {
-  const { id, amount, accountid } = req.body;
 
-  if (!id || !amount || !accountid) {
+export const member_withdraw_credit = async (req, res) => {
+  const { id, amount, accountId } = req.body;
+
+  if (!id || !amount || !accountId) {
     return res.status(400).send({
       status: false,
-      message: "Missing required fields: id, amount, or accountid",
+      message: "Missing required fields: id, amount, or accountId",
+      data: [],
+    });
+  }
+
+  const withdrawAmount = Number(amount);
+  if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
+    return res.status(400).send({
+      status: false,
+      message: "Invalid withdraw amount",
       data: [],
     });
   }
 
   try {
-    // Optionally get uploaded image filenames (if provided)
-    const imageArray =
-      req.files && req.files.length > 0
-        ? req.files.map((file) => file.filename)
-        : [];
+    const generateId = "wd" + Date.now();
 
-    // ✅ Insert log
     const insertLog = `
       INSERT INTO public.tblogsmemberpayment(
-        id, memberid, type, amount, account, cdate
+        id, memberid, type, amount, status,account, cdate
       )
-      VALUES ('withdraw1', $1, 'Withdraw', $2, $3, NOW())
+      VALUES ($1, $2, 'withdraw', $3, $4,$5, NOW())
       RETURNING *;
     `;
 
-    const logInserted = await dbExecution(insertLog, [id, amount, accountid]);
+    const logInserted = await dbExecution(insertLog, [
+      generateId,
+      id,
+      withdrawAmount,
+      'pending',
+      accountId,
+    ]);
 
-    // ✅ Check if insert succeeded
     if (!logInserted || logInserted.rowCount === 0) {
       return res.status(400).send({
         status: false,
@@ -159,7 +168,6 @@ export const member_withdraw_credit = async (req, res) => {
       });
     }
 
-    // ✅ Success response
     return res.status(200).send({
       status: true,
       message: "Withdraw request recorded successfully",
@@ -167,7 +175,7 @@ export const member_withdraw_credit = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in member_withdraw_credit:", error);
-    res.status(500).send({
+    return res.status(500).send({
       status: false,
       message: "Internal Server Error",
       error: error.message,
@@ -175,3 +183,4 @@ export const member_withdraw_credit = async (req, res) => {
     });
   }
 };
+
