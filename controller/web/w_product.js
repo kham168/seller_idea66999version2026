@@ -277,8 +277,7 @@ export const queryOne = async (req, res) => {
 // insert data  test  nw work lawm
 export const insertData = async (req, res) => {
   const {
-    channel,
-    id,
+    channel, 
     name,
     type,
     price1,
@@ -289,6 +288,7 @@ export const insertData = async (req, res) => {
   } = req.body;
 
   // ✅ Validate required fields
+   const id = "p" + Date.now();
   if (!id || !name || !price1 || !detail) {
     return res.status(400).send({
       status: false,
