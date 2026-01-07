@@ -37,8 +37,6 @@ router.get("/getAdminDataById", queryAdminData);
 router.post("/adminRegister", admin_register);
 router.put("/updateAdminStatus", UpdateAdminStatus);
 router.get("/getAllAdmin", queryAdminAll);
-
-
 router.post("/insertProductList", uploadImage, insertData);
 
 export default router;

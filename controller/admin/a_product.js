@@ -1,7 +1,5 @@
 import { dbExecution } from "../../dbconfig/dbconfig.js";
-
-
-
+ 
 // insert data  test  nw work lawm
 export const insertData = async (req, res) => {
   const {
