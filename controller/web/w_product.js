@@ -293,7 +293,7 @@ export const insertData = async (req, res) => {
     return res.status(400).send({
       status: false,
       message:
-        "Missing required fields: id, name, price1, and detail are required",
+        "Missing required fields: id, name, price2, and detail are required",
       data: [],
     });
   }
@@ -319,7 +319,7 @@ export const insertData = async (req, res) => {
       id,
       name,
       type,
-      price1 || null,
+      price1 || 0,
       price2,
       Array.isArray(size) ? JSON.stringify(size) : size, // ✅ fix here
       Array.isArray(productDetail)

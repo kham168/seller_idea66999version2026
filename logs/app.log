@@ -152,3 +152,12 @@ Params: 15,0
     
 
 Params: wd1767777087905,1,3000,pending,6666
+2026-01-09 10:23:47	Query: 
+      SELECT top 1 id, name, lastname, gender, gmail, country, state, 
+             profileimage, bankaccount1, bankaccount2, 
+             wallet, totalsell, totalincome, totalwithdrawal, status, 
+             becustofadmin, cdate
+      FROM public.tbmember WHERE id = $1 AND status = '1' order by cdate desc;
+    
+
+Params: 4

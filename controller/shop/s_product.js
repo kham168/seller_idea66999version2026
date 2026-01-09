@@ -6,6 +6,14 @@ export const queryAllProductByMemberId = async (req, res) => {
     const page = req.query.page ?? 0;
     const limit = req.query.limit ?? 15;
 
+if (!id) {
+  return res.status(400).send({
+    status: false,
+    message: "Missing member id",
+    data: [],
+  });
+}
+
     const validPage = Math.max(parseInt(page, 10) || 0, 0);
     const validLimit = Math.max(parseInt(limit, 10) || 15, 1);
     const offset = validPage * validLimit;
@@ -25,6 +33,59 @@ export const queryAllProductByMemberId = async (req, res) => {
     const total = parseInt(countResult.rows[0]?.total || 0, 10);
 
     const baseUrl = "http://localhost:1789/";
+
+    const isFirstPage = validPage === 0;
+
+    let profileData = null;
+
+  if (isFirstPage) {
+      try {
+        const querySelect = `
+      SELECT id, name, lastname, gender, gmail, country, state, 
+             profileimage, bankaccount1, bankaccount2, 
+             wallet, totalsell, totalincome, totalwithdrawal, status, 
+             becustofadmin, cdate
+      FROM public.tbmember WHERE id = $1 AND status = '1' order by cdate desc limit 1;
+    `;
+
+        const profile = await dbExecution(querySelect, [id]);
+
+        if (!profile || profile.rowCount === 0) {
+          return res.status(200).send({
+            status: true,
+            message: "No data found",
+            data: [],
+          });
+        }
+
+        // ✅ Append full URL to profileimage if exists
+        profileData = profile.rows.map((row) => {
+          let imagePath = null;
+
+          if (row.profileimage) {
+            // Handle if it's stored as array or string
+            if (Array.isArray(row.profileimage)) {
+              imagePath = row.profileimage.map((img) => `${baseUrl}${img}`);
+            } else {
+              imagePath = `${baseUrl}${row.profileimage}`;
+            }
+          }
+
+          return {
+            ...row,
+            profileimage: imagePath,
+          };
+        });
+      } catch (error) {
+        console.error("Error in queryMemberData:", error);
+        res.status(500).send({
+          status: false,
+          message: "Internal Server Error",
+          error: error.message,
+          data: [],
+        });
+      }
+    }
 
     // Fetch paginated data
     const dataQuery = `
@@ -60,7 +121,7 @@ export const queryAllProductByMemberId = async (req, res) => {
 
       // ✅ Parse the 3 JSON-like fields
       const size = parseJSON(r.size);
-      const productdetail = parseJSON(r.productdetail);
+      const productDetail = parseJSON(r.productdetail);
       const detail = parseJSON(r.detail);
 
       // ✅ Parse images into clean URLs
@@ -81,7 +142,7 @@ export const queryAllProductByMemberId = async (req, res) => {
       return {
         ...r,
         size,
-        productdetail,
+        productDetail,
         detail,
         image: imgs,
       };
@@ -91,7 +152,11 @@ export const queryAllProductByMemberId = async (req, res) => {
     res.status(200).send({
       status: true,
       message: rows.length > 0 ? "Query successful" : "No data found",
-      data: rows,
+      data: {
+        profile: profileData,
+        products: rows,
+      },
+
       pagination: {
         page: validPage,
         limit: validLimit,
