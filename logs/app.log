@@ -161,3 +161,80 @@ Params: wd1767777087905,1,3000,pending,6666
     
 
 Params: 4
+2026-01-15 16:54:59	Query: 
+      SELECT id, name,'' as [lastname], usertype as[usertyped], gmail, password
+      FROM public.tbadminuser
+      WHERE gmail = $1 AND status = '1';
+    
+
+Params: abcdd@gmail.com
+2026-01-15 16:54:59	Query: 
+        SELECT id, name, lastname, '' as [usertyped], gmail, password
+        FROM public.tbmember
+        WHERE gmail = $1 AND status = '1';
+      
+
+Params: abcdd@gmail.com
+2026-01-15 16:56:08	Query: 
+      SELECT id, name,'' as [lastname], usertype as [usertyped], gmail, password
+      FROM public.tbadminuser
+      WHERE gmail = $1 AND status = '1';
+    
+
+Params: abcdd@gmail.com
+2026-01-15 16:56:08	Query: 
+        SELECT id, name, lastname, '' as [usertyped], gmail, password
+        FROM public.tbmember
+        WHERE gmail = $1 AND status = '1';
+      
+
+Params: abcdd@gmail.com
+2026-01-15 16:58:03	Query: 
+      SELECT id, name,'' as lastname, usertype as usertyped, gmail, password
+      FROM public.tbadminuser
+      WHERE gmail = $1 AND status = '1';
+    
+
+Params: abcdd@gmail.com
+2026-01-15 16:59:25	Query: 
+      SELECT id, name,'' as lastname, usertype, gmail, password
+      FROM public.tbadminuser
+      WHERE gmail = $1 AND status = '1';
+    
+
+Params: abcdd@gmail.com
+2026-01-15 16:59:59	Query: 
+      SELECT id, name,'' as lastname, usertype, gmail, password
+      FROM public.tbadminuser
+      WHERE gmail = $1 AND status = '1';
+    
+
+Params: gtpp@gmail.com
+2026-01-15 17:00:19	Query: 
+      SELECT id, name,'' as lastname, usertype, gmail, password
+      FROM public.tbadminuser
+      WHERE gmail = $1 AND status = '1';
+    
+
+Params: gtp@gmail.com
+2026-01-15 17:01:48	Query: 
+      SELECT id, name,'' as lastname, usertype, gmail, password
+      FROM public.tbadminuser
+      WHERE gmail = $1 AND status = '1';
+    
+
+Params: gtpo@gmail.com
+2026-01-15 17:01:51	Query: 
+      SELECT id, name,'' as lastname, usertype, gmail, password
+      FROM public.tbadminuser
+      WHERE gmail = $1 AND status = '1';
+    
+
+Params: gtpo@gmail.com
+2026-01-15 17:02:13	Query: 
+      SELECT id, name,'' as lastname, usertype, gmail, password
+      FROM public.tbadminuser
+      WHERE gmail = $1 AND status = '1';
+    
+
+Params: gtpo@gmail.com
