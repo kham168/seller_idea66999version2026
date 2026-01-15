@@ -47,8 +47,7 @@ export const loginUser = async (req, res) => {
   
 
 ////========= end login with token======
-
-
+ 
 
 export const memberLogin = async (req, res) => {
   const { gmail, password } = req.body; // 👈 safer than params for login
