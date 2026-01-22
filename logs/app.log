@@ -238,3 +238,83 @@ Params: gtpo@gmail.com
     
 
 Params: gtpo@gmail.com
+2026-01-22 19:25:20	Query: 
+	INSERT INTO public.tborderpd(
+	id, productid, productname, price, qty, totalprice, incomerate, custgmail,
+	custaddress, memberid, cdate, sellstatus)
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9,$10, NOW(),'pending')
+      RETURNING *;
+    
+
+Params: ,5,,25000,2,,3,,[{"band":"Good","name":"AA"}],27
+2026-01-22 19:25:20	Query: 
+	INSERT INTO public.tborderpd(
+	id, productid, productname, price, qty, totalprice, incomerate, custgmail,
+	custaddress, memberid, cdate, sellstatus)
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9,$10, NOW(),'pending')
+      RETURNING *;
+    
+
+Params: ,5,,25000,,,500,,[{"band":"Good","name":"AA"}],27
+2026-01-22 21:33:33	Query: 
+	INSERT INTO public.tborderpd(
+	id, productid, productname, price, qty, totalprice, ProfitRate, income, custgmail,
+	custaddress, memberid, cdate, sellstatus)
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9,$10, NOW(),'pending')
+      RETURNING *;
+    
+
+Params: orderkdq4vleh59,5,,250,2,,2,,,[{"band":"Good","name":"AA"}],27
+2026-01-22 21:33:33	Query: 
+	INSERT INTO public.tborderpd(
+	id, productid, productname, price, qty, totalprice, ProfitRate, income, custgmail,
+	custaddress, memberid, cdate, sellstatus)
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9,$10, NOW(),'pending')
+      RETURNING *;
+    
+
+Params: orderkdq4vleh59,5,,256,,,3,,,[{"band":"Good","name":"AA"}],27
+2026-01-22 21:59:16	Query: 
+      UPDATE public.tborderpd
+	SET sellstatus=$2, detail=$3, amtb=$4,amtf=$5 scfdate=NEW(), incomestatus=$6
+	WHERE id=$1 and sellstatus='pending'
+      RETURNING *;
+    
+
+Params: orderxr6cxgk8f9,completed,Sell confirmed and wallet updated successfully,50000,49575,pending
+2026-01-22 22:00:07	Query: 
+      UPDATE public.tborderpd
+	SET sellstatus=$2, detail=$3, amtb=$4,amtf=$5, scfdate=NEW(), incomestatus=$6
+	WHERE id=$1 and sellstatus='pending'
+      RETURNING *;
+    
+
+Params: orderxr6cxgk8f9,completed,Sell confirmed and wallet updated successfully,50000,49575,pending
+2026-01-22 22:12:37	Query: 
+   UPDATE public.tbmember
+	 SET wallet=$2, totalincome=$4,  
+   WHERE id=$1 and state='1'
+    
+
+Params: 3,50434,434
+2026-01-22 22:15:08	Query: 
+   UPDATE public.tbmember
+	 SET wallet=$2, totalincome=$4,  
+   WHERE id=$1 and state='1'
+    
+
+Params: 3,50434,434
+2026-01-22 22:26:37	Query: 
+   UPDATE public.tbmember
+	 SET wallet=$2, totalincome=$4,  
+   WHERE id=$1 and status='1'
+    
+
+Params: 3,50439,439
+2026-01-22 22:28:38	Query: 
+   UPDATE public.tbmember
+	 SET wallet=$2, totalincome=$4  
+   WHERE id=$1 and status='1'
+    
+
+Params: 3,50009,439

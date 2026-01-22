@@ -42,7 +42,7 @@ if (!id) {
       try {
         const querySelect = `
       SELECT id, name, lastname, gender, gmail, country, state, 
-             profileimage, bankaccount1, bankaccount2, 
+             profileimage, accountname, bankaccount, 
              wallet, totalsell, totalincome, totalwithdrawal, status, 
              becustofadmin, cdate
       FROM public.tbmember WHERE id = $1 AND status = '1' order by cdate desc limit 1;

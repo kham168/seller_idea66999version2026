@@ -16,10 +16,11 @@ import {
   admin_register,
   UpdateAdminStatus,queryAdminAll
 } from "../controller/admin/a_login.js";
+import {confirmSellStatus,confirmIncomeIntoMemberWallet} from "../controller/admin/a_order.js";
 import {insertData} from "../controller/admin/a_product.js";
 import {StaffConfirmPayForMemberPaymentAndWithdraw} from "../controller/admin/a_payment.js";
 import { uploadImage } from "../middleware/product.uploadimage.js";
-//import { protect } from "../middleware/token.js";
+//import { protect } from "../middleware/token.js"; insertOrderData
 const router = Router();
 
 router.get("/getOrderOne", queryOrderDataOne);
@@ -38,5 +39,7 @@ router.post("/adminRegister", admin_register);
 router.put("/updateAdminStatus", UpdateAdminStatus);
 router.get("/getAllAdmin", queryAdminAll);
 router.post("/insertProductList", uploadImage, insertData);
+router.post("/confirmSellStatus", confirmSellStatus);
+router.post("/confirmIncomeToMember", confirmIncomeIntoMemberWallet);
 
 export default router;

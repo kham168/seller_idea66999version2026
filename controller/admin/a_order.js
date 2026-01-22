@@ -184,8 +184,9 @@ export const queryOrderDataAll = async (req, res) => {
 
 export const insertOrderData = async (req, res) => {
   try {
-    const { id, custAddress, data } = req.body;
-
+    const { custAddress, data } = req.body;
+    let id = null;
+    id = "order" + Math.random().toString(36).substring(2, 12);
     // ✅ Validate request body
     if (!Array.isArray(data) || data.length === 0) {
       return res.status(400).send({
@@ -202,10 +203,10 @@ export const insertOrderData = async (req, res) => {
 
     // ✅ Define base insert SQL
     const query = `
-      INSERT INTO public.tborderpd (
-        id, productname, type, size, price,incomerate,custgmail, custaddress, memberid,membername, cdate
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9,$10, NOW())
+	INSERT INTO public.tborderpd(
+	id, productid, productname, price, qty, totalprice, ProfitRate, income, custgmail,
+	custaddress, memberid, cdate, sellstatus)
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9,$10,$11, NOW(),'pending')
       RETURNING *;
     `;
 
@@ -215,31 +216,27 @@ export const insertOrderData = async (req, res) => {
     for (const item of data) {
       const {
         productId,
-        type,
-        size,
+        productName,
         price,
-        incomeRate,
+        qty,
+        totalPrice,
+        profitRate,
         custGmail,
         memberId,
-        membername,
       } = item;
-
-      if (!id || !productId || !memberId) {
-        console.warn(`Skipping invalid item:`, item);
-        continue;
-      }
 
       const values = [
         id,
         productId,
-        type || null,
-        size || null,
+        productName,
         price || null,
-        incomeRate || null,
+        qty || null,
+        totalPrice || null,
+        profitRate || null,
+        Math.floor((totalPrice * profitRate) / 100) || null,
         custGmail,
         addressJSON,
         memberId || null,
-        membername || null,
       ];
 
       const result = await dbExecution(query, values);
@@ -628,7 +625,7 @@ export const queryAllMemberWhoBeLongToAdminId = async (req, res) => {
     const dataQuery = `
     SELECT a.id, a.name, m.id, m.name, m.lastname, m.gender, 
 m.gmail, m.country, 
-m.state, m.profileimage, m.bankaccount1, m.bankaccount2, 
+m.state, m.profileimage, m.accountname, m.bankaccount, 
 m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadmin, m.cdate
  FROM public.tbmember m inner join
  public.tbadminuser a on a.id=m.becustofadmin
@@ -656,7 +653,7 @@ m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadm
       };
 
       // ✅ Parse images into clean URLs
-       let profileImg = null;
+      let profileImg = null;
 
       if (r.profileimage) {
         if (typeof r.profileimage === "string") {
@@ -722,7 +719,7 @@ export const queryAllMemberActiveForSupperAdmin = async (req, res) => {
     const dataQuery = `
     SELECT a.id, a.name, m.id, m.name, m.lastname, m.gender, 
 m.gmail, m.country, 
-m.state, m.profileimage, m.bankaccount1, m.bankaccount2, 
+m.state, m.profileimage, m.accountname, m.bankaccount, 
 m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadmin, m.cdate
  FROM public.tbmember m inner join
  public.tbadminuser a on a.id=m.becustofadmin
@@ -811,6 +808,257 @@ export const normal_update_order_list_into_to_failed = async (req, res) => {
     `;
 
     const result = await dbExecution(updateOrderStatus, [id, status, detail]);
+
+    if (!result || result.rowCount === 0) {
+      return res.status(404).send({
+        status: false,
+        message: "Order not found or update failed",
+        data: [],
+      });
+    }
+
+    return res.status(200).send({
+      status: true,
+      message: "Updated Order Status successfully",
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Error in memberUpdateImageProfile:", error);
+    res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      error: error.message,
+      data: [],
+    });
+  }
+};
+
+export const confirmSellStatus = async (req, res) => {
+  const { id } = req.body;
+
+  if (!id) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing member ID",
+      data: [],
+    });
+  }
+
+  let amount = 0;
+  let memberId = "";
+  let statused = "";
+  let detailed = "";
+  let incomestatus = "";
+  let creditB = 0;
+  let creditF = 0;
+  let totalSell = 0;
+
+  const getorderamt = `SELECT 
+  SUM(totalprice::numeric) AS amount,memberid
+  FROM public.tborderpd where id=$1 and sellstatus='pending' group by memberid
+    `;
+  const resultgetorderdatafirst = await dbExecution(getorderamt, [id]);
+  amount = Number(resultgetorderdatafirst.rows[0]?.amount || 0);
+  memberId = resultgetorderdatafirst.rows[0]?.memberid || "";
+
+  if (!memberId) {
+    return res.status(400).send({
+      status: false,
+      message: "No valid member ID found for this order",
+      data: [],
+    });
+  }
+
+  const getcredit = `
+    SELECT  wallet,totalsell FROM public.tbmember where id=$1 and status='1' limit 1
+    `;
+  const resultCredit = await dbExecution(getcredit, [memberId]);
+
+  if (!resultCredit || resultCredit.rowCount === 0) {
+    return res.status(400).send({
+      status: false,
+      message: "No valid member found or member inactive",
+      data: [],
+    });
+  }
+
+  creditB = Number(resultCredit.rows[0]?.wallet || 0);
+  totalSell = Number(resultCredit.rows[0]?.totalsell || 0);
+  amount = Number(amount || 0);
+
+  if (creditB < amount) {
+    statused = "failed";
+    detailed = "Insufficient balance in member wallet";
+    incomestatus = "";
+  } else {
+    statused = "completed";
+    detailed = "Sell confirmed and wallet updated successfully";
+    incomestatus = "pending";
+
+    creditF = creditB - amount;
+    totalSell = totalSell + amount;
+    try {
+      const updatecredit = `
+  UPDATE public.tbmember
+	SET wallet=$2, totalsell=$3 
+  WHERE id=$1 and status='1'
+    `;
+      const resultUpdateCredit = await dbExecution(updatecredit, [
+        memberId,
+        creditF,
+        totalSell,
+      ]);
+    } catch (error) {
+      console.error("Error in memberUpdateImageProfile:", error);
+      res.status(500).send({
+        status: false,
+        message: "Internal Server Error",
+        error: error.message,
+        data: [],
+      });
+    }
+  }
+
+  try {
+    // ✅ Update the member's profile image (just first image)
+    const updateDataStatus = `
+      UPDATE public.tborderpd
+	SET sellstatus=$2, detail=$3, amtb=$4,amtf=$5, scfdate=NOW(), incomestatus=$6
+	WHERE id=$1 and sellstatus='pending'
+      RETURNING *;
+    `;
+
+    const result = await dbExecution(updateDataStatus, [
+      id,
+      statused,
+      detailed,
+      creditB,
+      creditF,
+      incomestatus,
+    ]);
+
+    if (!result || result.rowCount === 0) {
+      return res.status(404).send({
+        status: false,
+        message: "Order not found or update failed",
+        data: [],
+      });
+    }
+
+    return res.status(200).send({
+      status: true,
+      message: "Updated Order Status successfully",
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Error in memberUpdateImageProfile:", error);
+    res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      error: error.message,
+      data: [],
+    });
+  }
+};
+
+export const confirmIncomeIntoMemberWallet = async (req, res) => {
+  const { id } = req.body;
+
+  if (!id) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing member ID",
+      data: [],
+    });
+  }
+  let amount = 0;
+  let memberId = "";
+  let detailed = "";
+  let creditB = 0;
+  let creditF = 0;
+  let totalSell = 0;
+
+  const getorderamt = `
+   SELECT 
+   SUM(totalprice::numeric) + SUM(income::numeric)AS amount,memberid
+   FROM public.tborderpd where id=$1 and incomestatus='pending' group by memberid
+    `;
+  const getorderamts = await dbExecution(getorderamt, [id]);
+  amount = Number(getorderamts.rows[0]?.amount || 0);
+  memberId = getorderamts.rows[0]?.memberid || "";
+
+  if (!memberId) {
+    return res.status(400).send({
+      status: false,
+      message: "No valid member ID found for this order",
+      data: [],
+    });
+  }
+
+  const getcredit = `
+    SELECT  wallet,totalincome FROM public.tbmember where id=$1 and status='1' limit 1
+    `;
+  const resultCredit = await dbExecution(getcredit, [memberId]);
+
+  if (!resultCredit || resultCredit.rowCount === 0) {
+    return res.status(400).send({
+      status: false,
+      message: "No valid member found or member inactive",
+      data: [],
+    });
+  }
+  creditB = Number(resultCredit.rows[0]?.wallet || 0);
+  totalSell = Number(resultCredit.rows[0]?.totalincome || 0);
+  amount = Number(amount || 0);
+
+  if (amount <= 0 || creditB <= 0) {
+    return res.status(400).send({
+      status: false,
+      message: "No valid member found or member inactive",
+      data: [],
+    });
+  }
+
+  creditF = creditB + amount;
+  totalSell = totalSell + amount;
+
+  try {
+    const updatecredit = `
+   UPDATE public.tbmember
+	 SET wallet=$2, totalincome=$3  
+   WHERE id=$1 and status='1'
+    `;
+
+    const resultUpdateCredit = await dbExecution(updatecredit, [
+      memberId,
+      creditF,
+      totalSell,
+    ]);
+  } catch (error) {
+    console.error("Error in memberUpdateImageProfile:", error);
+    res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      error: error.message,
+      data: [],
+    });
+  }
+
+  try {
+    // ✅ Update the member's profile image (just first image)
+    const updateDataStatus = `
+    UPDATE public.tborderpd
+	SET incomestatus='completed', incomeamt=$2, memberamtb=$3, memberantf=$4, icfdate=NOW()
+	WHERE id=$1 and incomestatus='pending'
+      RETURNING *;
+    `;
+
+    const result = await dbExecution(updateDataStatus, [
+      id,
+      amount,
+      creditB,
+      creditF,
+    ]);
 
     if (!result || result.rowCount === 0) {
       return res.status(404).send({

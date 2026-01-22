@@ -44,10 +44,8 @@ export const loginUser = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-  
 
 ////========= end login with token======
- 
 
 export const memberLogin = async (req, res) => {
   const { gmail, password } = req.body; // 👈 safer than params for login
@@ -139,7 +137,7 @@ export const queryMemberData = async (req, res) => {
 
     const querySelect = `
       SELECT id, name, lastname, gender, gmail, password, country, state, 
-             profileimage, bankaccount1, bankaccount2, 
+             profileimage, accountname, bankaccount , 
              wallet, totalsell, totalincome, totalwithdrawal, status, 
              becustofadmin, cdate
       FROM public.tbmember 
@@ -297,12 +295,12 @@ export const memberUpdateAccountId = async (req, res) => {
     let paramIndex = 2;
 
     if (firstAccount) {
-      updates.push(`bankaccount1 = $${paramIndex++}`);
+      updates.push(`accountname = $${paramIndex++}`);
       values.push(firstAccount);
     }
 
     if (secondAccount) {
-      updates.push(`bankaccount2 = $${paramIndex++}`);
+      updates.push(`bankaccount = $${paramIndex++}`);
       values.push(secondAccount);
     }
 

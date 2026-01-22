@@ -9,7 +9,6 @@ import {
 import {
   queryOrderDataAll,
   queryOrderDataOne,
-  insertOrderData,
 } from "../controller/web/w_order.js";
 import { uploadImaged } from "../middleware/channel.uploadimage.js";
 import { uploadImage } from "../middleware/product.uploadimage.js";
@@ -21,7 +20,6 @@ route.get("/selectProductId", queryOne);
 route.post("/insertProductList", uploadImage, insertData);
 route.get("/selectOrderList", queryOrderDataAll);
 route.get("/selectOrderId", queryOrderDataOne);
-route.post("/insertOrderList", insertOrderData);
 route.post("/insertChannelData", uploadImaged, insertChannelData);
 
 export default route;
