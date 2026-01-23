@@ -519,13 +519,13 @@ export const queryAllProductByMemberId = async (req, res) => {
 
     // Fetch paginated data
     const dataQuery = `
-    SELECT m.id,m.name, channel, p.id, p.modelname, p.type, price1, 
-	price2, p.size, p.productdetail, p.detail, p.image, 
-	p.video, p.star, p.totalsell, p.cdate
+    SELECT m.id,m.name, p.id, p.modelname, p.type, price1, 
+	price2, p.size, p.productdetail, p.image, 
+	 p.star, p.totalsell, p.cdate
 	FROM public.tbproduct  p inner join
 	public.tbmemberjoinproduct j on j.productid=p.id
 	inner join public.tbmember m on m.id=j.memberid
-	where m.id='1' and  and p.status = '1' and j.status='1'
+	where m.id='1' and p.status = '1' and j.status='1'
       LIMIT $1 OFFSET $2;
     `;
 

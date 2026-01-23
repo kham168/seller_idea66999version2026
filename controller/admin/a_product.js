@@ -1,17 +1,9 @@
 import { dbExecution } from "../../dbconfig/dbconfig.js";
- 
+
 // insert data  test  nw work lawm
 export const insertData = async (req, res) => {
-  const {
-    channel,
-    name,
-    type,
-    price1,
-    price2,
-    size,
-    productDetail,
-    detail,profitRate
-  } = req.body;
+  const { name, type, price1, price2, size, productDetail, profitRate } =
+    req.body;
 
   // ✅ Validate required fields
   const id = "p" + Date.now();
@@ -35,14 +27,13 @@ export const insertData = async (req, res) => {
     // ✅ Insert into main table directly
     const query = `
     INSERT INTO public.tbproduct(
-    channel, id, modelname, type, price1, price2, size, productdetail, detail, profitrate,
+     id, modelname, type, price1, price2, size, productdetail, profitrate,
     image, status, cdate)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10, '1', NOW())
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '1', NOW())
       RETURNING *;
     `;
 
     const values = [
-      channel,
       id,
       name,
       type,
@@ -52,7 +43,7 @@ export const insertData = async (req, res) => {
       Array.isArray(productDetail)
         ? JSON.stringify(productDetail)
         : productDetail,
-      Array.isArray(detail) ? JSON.stringify(detail) : detail,profitRate,
+      profitRate,
       imageArray,
     ];
 
@@ -82,6 +73,3 @@ export const insertData = async (req, res) => {
     });
   }
 };
-
-
-

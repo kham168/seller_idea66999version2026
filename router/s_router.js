@@ -12,8 +12,7 @@ import {
   queryAllProductWhichOneNoJoinWithIdNewData,
   insertJoinProductId,
   UnJoinProduct,
-} from "../controller/shop/s_product.js";
-import { queryOrderDataAllByMemberId } from "../controller/shop/s_order.js";
+} from "../controller/shop/s_product.js"; 
 import { uploadImage } from "../middleware/refillwallet.upload.js";
 import {
   queryMemberData,
@@ -25,7 +24,6 @@ import {
 const route = Route();
 
 route.get("/getProductList", queryAllProductByMemberId);
-route.get("/getOrderList", queryOrderDataAllByMemberId);
 route.get("/toJoinProduct", queryAllProductWhichOneNoJoinWithId);
 route.get("/toJoinProductNew", queryAllProductWhichOneNoJoinWithIdNewData);
 route.get("/getMemberData", queryMemberData);

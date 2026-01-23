@@ -278,7 +278,7 @@ export const member_register = async (req, res) => {
 };
 
 export const memberUpdateAccountId = async (req, res) => {
-  const { id, firstAccount, secondAccount } = req.body;
+  const { id, accountName, accountId } = req.body;
 
   if (!id) {
     return res.status(400).send({
@@ -294,14 +294,14 @@ export const memberUpdateAccountId = async (req, res) => {
     const values = [id];
     let paramIndex = 2;
 
-    if (firstAccount) {
+    if (accountName) {
       updates.push(`accountname = $${paramIndex++}`);
-      values.push(firstAccount);
+      values.push(accountName);
     }
 
-    if (secondAccount) {
+    if (accountId) {
       updates.push(`bankaccount = $${paramIndex++}`);
-      values.push(secondAccount);
+      values.push(accountId);
     }
 
     // ✅ Check if there’s anything to update

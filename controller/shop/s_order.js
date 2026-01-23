@@ -20,7 +20,7 @@ export const queryOrderDataAllByMemberId = async (req, res) => {
 
     // ✅ Fetch paginated data
     const dataQuery = `
-      SELECT id, productname, type, size, price, qty, totalprice, incomerate, custaddress, membername, cdate, detail, cfdate
+      SELECT id, productname, price, qty, totalprice, income, custaddress, membername, cdate, detail, cfdate
 	FROM public.tborderpd where memberid=$1 
       ORDER BY cdate DESC
       LIMIT $2 OFFSET $3;

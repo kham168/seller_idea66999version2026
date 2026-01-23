@@ -347,3 +347,11 @@ Params: 3,22,0
     
 
 Params: ,p1769138768574,Frontend,one,0,25009,[{ "band": "AA", "size": "35" }],[{ "name": "AA", "size": "35" }],[{ "detail": "AA", "size": "35" }],3,sell-1769138768563-212409700-toure.jpg,sell-1769138768565-943087484-tour.jpg,sell-1769138768566-146939502-touii.jpg
+2026-01-23 11:41:33	Query: 
+      SELECT id, productname, type, size, price, qty, totalprice, incomerate, custaddress, membername, cdate, detail, cfdate
+	FROM public.tborderpd where memberid=$1 
+      ORDER BY cdate DESC
+      LIMIT $2 OFFSET $3;
+    
+
+Params: 3,15,0
