@@ -318,3 +318,32 @@ Params: 3,50439,439
     
 
 Params: 3,50009,439
+2026-01-23 09:05:31	Query: 
+      SELECT id, productname as productname, type, size, price, custaddress, incomerate, 
+             memberid,membername, cdate, membercf, detail, cfdate
+      FROM public.tborderpd where memberId is not null
+      ORDER BY cdate DESC
+      LIMIT $1 OFFSET $2;
+    
+
+Params: 22,0
+2026-01-23 09:19:39	Query: 
+      SELECT id, productid, productname, price, qty, totalprice, profitrate, 
+income, custgmail, custaddress, memberid, cdate, sellstatus, 
+detail, amtb, amtf, scfdate, incomestatus, incomeamt, memberamtb, 
+memberantf, icfdate
+	FROM public.tborderpd where memberId=$1
+      ORDER BY cdate DESC
+      LIMIT $1 OFFSET $2;
+    
+
+Params: 3,22,0
+2026-01-23 10:26:10	Query: 
+    INSERT INTO public.tbproduct(
+	channel, id, modelname, type, price1, price2, size, productdetail, detail, profitrate,
+    image, status, cdate)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10, '1', NOW())
+      RETURNING *;
+    
+
+Params: ,p1769138768574,Frontend,one,0,25009,[{ "band": "AA", "size": "35" }],[{ "name": "AA", "size": "35" }],[{ "detail": "AA", "size": "35" }],3,sell-1769138768563-212409700-toure.jpg,sell-1769138768565-943087484-tour.jpg,sell-1769138768566-146939502-touii.jpg

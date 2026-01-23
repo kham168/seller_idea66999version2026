@@ -10,7 +10,7 @@ export const insertData = async (req, res) => {
     price2,
     size,
     productDetail,
-    detail,
+    detail,profitRate
   } = req.body;
 
   // ✅ Validate required fields
@@ -35,7 +35,7 @@ export const insertData = async (req, res) => {
     // ✅ Insert into main table directly
     const query = `
     INSERT INTO public.tbproduct(
-    channel, id, modelname, type, price1, price2, size, productdetail, detail, 
+    channel, id, modelname, type, price1, price2, size, productdetail, detail, profitrate,
     image, status, cdate)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10, '1', NOW())
       RETURNING *;
@@ -52,7 +52,7 @@ export const insertData = async (req, res) => {
       Array.isArray(productDetail)
         ? JSON.stringify(productDetail)
         : productDetail,
-      Array.isArray(detail) ? JSON.stringify(detail) : detail,
+      Array.isArray(detail) ? JSON.stringify(detail) : detail,profitRate,
       imageArray,
     ];
 

@@ -26,7 +26,7 @@ export const queryAll = async (req, res) => {
     // Fetch paginated data
     const dataQuery = `
       SELECT channel, id, modelname, type, price1, price2, size, 
-             productdetail, detail, image, video, star, totalsell, status, cdate
+             productdetail, detail, profitrate, image, video, star, totalsell, status, cdate
       FROM public.tbproduct 
       WHERE status='1' ORDER BY cdate DESC
       LIMIT $1 OFFSET $2;
@@ -75,6 +75,7 @@ export const queryAll = async (req, res) => {
         size,
         productdetail,
         detail,
+        profitrate,
         image: imgs,
       };
     });
@@ -199,7 +200,7 @@ export const queryOne = async (req, res) => {
     // Fetch paginated data
     const dataQuery = `
       SELECT channel, id, modelname, type, price1, price2, size, 
-      productdetail, detail, image, video, star, totalsell, status, cdate
+      productdetail, detail, profitrate, image, video, star, totalsell, status, cdate
       FROM public.tbproduct 
       WHERE id=$1
     `;
@@ -285,10 +286,11 @@ export const insertData = async (req, res) => {
     size,
     productDetail,
     detail,
+    profitRate,
   } = req.body;
 
   // ✅ Validate required fields
-   const id = "p" + Date.now();
+  const id = "p" + Date.now();
   if (!id || !name || !price2 || !detail) {
     return res.status(400).send({
       status: false,
@@ -308,9 +310,9 @@ export const insertData = async (req, res) => {
     // ✅ Insert into main table directly
     const query = `
     INSERT INTO public.tbproduct(
-	channel, id, modelname, type, price1, price2, size, productdetail, detail, 
+	channel, id, modelname, type, price1, price2, size, productdetail, detail, profitrate,
     image, status, cdate)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10, '1', NOW())
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10,$11, '1', NOW())
       RETURNING *;
     `;
 
@@ -326,6 +328,7 @@ export const insertData = async (req, res) => {
         ? JSON.stringify(productDetail)
         : productDetail,
       Array.isArray(detail) ? JSON.stringify(detail) : detail,
+      profitRate,
       imageArray,
     ];
 
