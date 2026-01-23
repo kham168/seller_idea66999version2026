@@ -1,11 +1,8 @@
 import { dbExecution } from "../../dbconfig/dbconfig.js";
-import jwt from "jsonwebtoken"; 
+import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
-
-
 ///===== login =====
- 
 
 // Generate token helper
 const generateToken = (id) => {
@@ -87,7 +84,7 @@ export const memberLogin = async (req, res) => {
     }
 
     const user = result.rows[0];
-    
+
     // 3️⃣ Compare input password with hashed password
     const isMatch = await bcrypt.compare(password, user.password);
 
@@ -108,7 +105,8 @@ export const memberLogin = async (req, res) => {
     return res.status(200).send({
       status: true,
       message: "Login successful",
-      data: user, token
+      data: user,
+      token,
     });
   } catch (error) {
     console.error("Error in memberLogin:", error);
@@ -190,7 +188,6 @@ export const queryMemberData = async (req, res) => {
     });
   }
 };
-
 
 export const member_register = async (req, res) => {
   const { id, name, lastname, gender, gmail, password, country } = req.body;
@@ -348,7 +345,6 @@ export const memberUpdateAccountId = async (req, res) => {
 };
 
 export const memberUpdateImageProfile = async (req, res) => {
-
   const { id } = req.body;
 
   if (!id) {
@@ -408,3 +404,73 @@ export const memberUpdateImageProfile = async (req, res) => {
     });
   }
 };
+
+export const getDataForHomePage = async (req, res) => {
+
+  const memberId = req.query.id;
+
+  if (!memberId) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing member ID",
+      data: [],
+    });
+  }
+
+  try {
+    // 1️⃣ Member profile
+    const getProfile = `
+      SELECT id, name, lastname, gender,
+             country, state, profileimage,
+             accountname, bankaccount,
+             wallet, totalsell, totalincome
+      FROM public.tbmember
+      WHERE id = $1;
+    `;
+    const profileResult = await dbExecution(getProfile, [memberId]);
+
+    // 2️⃣ Top 5 products by order count
+    const getTopData = `
+      SELECT productname, COUNT(*)::int AS qty
+      FROM public.tborderpd
+      WHERE memberid = $1
+      GROUP BY productname
+      ORDER BY qty DESC
+      LIMIT 5;
+    `;
+    const topResult = await dbExecution(getTopData, [memberId]);
+
+    // 3️⃣ Latest 15 orders
+    const getOrderList = `
+      SELECT productname, price, qty, totalprice,
+             profitrate, income, cdate,
+             sellstatus, detail,
+             amtb, amtf, incomestatus,
+             incomeamt, memberamtb, memberantf, icfdate
+      FROM public.tborderpd
+      WHERE memberid = $1
+      ORDER BY cdate DESC
+      LIMIT 15;
+    `;
+    const orderResult = await dbExecution(getOrderList, [memberId]);
+
+    return res.status(200).send({
+      status: true,
+      message: "Query successful",
+      data: {
+        profile: profileResult.rows[0] || null,
+        topProducts: topResult.rows,
+        recentOrders: orderResult.rows,
+      },
+    });
+  } catch (error) {
+    console.error("Error in getDataForHomePage:", error);
+    return res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      error: error.message,
+      data: [],
+    });
+  }
+};
+

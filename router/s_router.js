@@ -19,12 +19,13 @@ import {
   memberLogin,
   member_register,
   memberUpdateAccountId,
-  memberUpdateImageProfile,
+  memberUpdateImageProfile,getDataForHomePage
 } from "../controller/shop/s_login.js";
 const route = Route();
 
 route.get("/getProductList", queryAllProductByMemberId);
 route.get("/toJoinProduct", queryAllProductWhichOneNoJoinWithId);
+route.get("/getDataForHomePage", getDataForHomePage);
 route.get("/toJoinProductNew", queryAllProductWhichOneNoJoinWithIdNewData);
 route.get("/getMemberData", queryMemberData);
 route.post("/memberRegister", member_register);
