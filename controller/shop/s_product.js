@@ -319,7 +319,7 @@ export const queryAllProductWhichOneNoJoinWithIdNewData = async (req, res) => {
    LEFT JOIN public.tbmemberjoinproduct j 
   ON j.productid = p.id
   AND j.memberid = $1
-	where p.status = '1' and p.cdate <= current_date -1
+	where p.status = '1' and p.cdate >= current_date -1
     )s where s.memberid is null 
     LIMIT $2 OFFSET $3;
     `;
