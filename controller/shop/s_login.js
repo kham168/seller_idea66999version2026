@@ -45,6 +45,100 @@ export const loginUser = async (req, res) => {
 ////========= end login with token======
 
 export const memberLogin = async (req, res) => {
+  const { gmail, password } = req.body;
+
+  if (!gmail || !password) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing gmail or password",
+      data: [],
+    });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(gmail)) {
+    return res.status(400).send({
+      status: false,
+      message: "Invalid email format",
+      data: [],
+    });
+  }
+
+  try {
+    let user = null;
+    let userType = null;
+
+    // 1️⃣ Try ADMIN login first
+    const adminQuery = `
+      SELECT id, name,'' as lastname, usertype, gmail, password_hash as password
+      FROM public.tbadminuser
+      WHERE gmail = $1 AND status = '1';
+    `;
+
+    const adminResult = await dbExecution(adminQuery, [gmail]);
+
+    if (adminResult.rowCount > 0) {
+      user = adminResult.rows[0];
+      userType = "staff";
+    } else {
+      // 2️⃣ If not admin → try MEMBER
+      const memberQuery = `
+        SELECT id, name, lastname, 'shop' as usertype, gmail, password
+        FROM public.tbmember
+        WHERE gmail = $1 AND status = '1';
+      `;
+
+      const memberResult = await dbExecution(memberQuery, [gmail]);
+
+      if (memberResult.rowCount > 0) {
+        user = memberResult.rows[0];
+        userType = "shop";
+      }
+    }
+
+    // 3️⃣ If no user found at all
+    if (!user) {
+      return res.status(401).send({
+        status: false,
+        message: "Invalid email or password",
+        data: [],
+      });
+    }
+
+    // 4️⃣ Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).send({
+        status: false,
+        message: "Invalid email or password",
+        data: [],
+      });
+    }
+
+    // 5️⃣ Remove password before sending response
+    delete user.password;
+
+    return res.status(200).send({
+      status: true,
+      message: "Login successful",
+      data: {
+        ...user,
+        role: userType,
+      },
+    });
+  } catch (error) {
+    console.error("Error in adminLogin:", error);
+    return res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      error: error.message,
+      data: [],
+    });
+  }
+};
+
+export const memberLogined = async (req, res) => {
   const { gmail, password } = req.body; // 👈 safer than params for login
 
   if (!gmail || !password) {
@@ -66,13 +160,26 @@ export const memberLogin = async (req, res) => {
 
   try {
     // 1️⃣ Query member by gmail
-    const query = `
+    let mail = "";
+    let check = gmail;
+    let cutStr = check.slice(3);
+    if (cutStr == "uuu") {
+      mail = gmail.slice(3);
+      const query = `
       SELECT id, name, lastname, gmail, password
       FROM public.tbmember
       WHERE gmail = $1 AND status = '1';
     `;
+    } else {
+      mail = gmail;
+      const query = `
+      SELECT id, name, lastname, gmail, password
+      FROM public.tbmember
+      WHERE gmail = $1 AND status = '1';
+     `;
+    }
 
-    const result = await dbExecution(query, [gmail]);
+    const result = await dbExecution(query, [mail]);
 
     // 2️⃣ Check if user exists
     if (!result || result.rowCount === 0) {
@@ -406,7 +513,6 @@ export const memberUpdateImageProfile = async (req, res) => {
 };
 
 export const getDataForHomePage = async (req, res) => {
-
   const memberId = req.query.id;
 
   if (!memberId) {
@@ -473,4 +579,3 @@ export const getDataForHomePage = async (req, res) => {
     });
   }
 };
-
