@@ -721,7 +721,7 @@ export const queryAllMemberActiveForSupperAdmin = async (req, res) => {
 m.gmail, m.country, 
 m.state, m.profileimage, m.accountname, m.bankaccount, 
 m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadmin, m.cdate
- FROM public.tbmember m inner join
+ FROM public.tbmember m left join
  public.tbadminuser a on a.id=m.becustofadmin
  where m.status='1' order by m.cdate desc
       LIMIT $1 OFFSET $2;
