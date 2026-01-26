@@ -45,7 +45,7 @@ if (!id) {
              profileimage, accountname, bankaccount, 
              wallet, totalsell, totalincome, totalwithdrawal, status, 
              becustofadmin, cdate
-      FROM public.tbmember WHERE id = $1 AND status = '1' order by cdate desc limit 1;
+      FROM public.tbmember WHERE id = $1 AND status = '1' limit 1;
     `;
 
         const profile = await dbExecution(querySelect, [id]);
@@ -96,7 +96,7 @@ if (!id) {
    ON j.productid = p.id
    AND j.memberid = $1 and j.status='1'
    where p.status = '1'
-    )s where s.memberid is not null
+    )s where s.memberid is not null order by cdate desc
       LIMIT $2 OFFSET $3;
     `;
 
