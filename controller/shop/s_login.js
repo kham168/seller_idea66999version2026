@@ -509,7 +509,7 @@ export const memberUpdateImageProfile = async (req, res) => {
       UPDATE public.tbmember
       SET ${updates.join(", ")}
       WHERE id = $1
-      RETURNING *;
+      RETURNING profileimage, name, lastname, accountname, bankaccount;
     `;
 
     const result = await dbExecution(query, [id, ...values]);

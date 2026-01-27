@@ -157,7 +157,7 @@ export const StaffConfirmPayForMemberPaymentAndWithdraw = async (req, res) => {
         `UPDATE public.tbmember
          SET wallet=$2, totalwithdrawal=$3
          WHERE id=$1 AND status='1'`,
-        [memberId, creditF, totalwithdrawal + amt]
+        [memberId, creditF, totalwithdrawal + amt],
       );
     } else {
       return res.status(400).json({
@@ -173,7 +173,7 @@ export const StaffConfirmPayForMemberPaymentAndWithdraw = async (req, res) => {
         `UPDATE public.tbmember
          SET wallet=$2
          WHERE id=$1 AND status='1'`,
-        [memberId, creditF]
+        [memberId, creditF],
       );
     }
 
@@ -215,6 +215,197 @@ export const StaffConfirmPayForMemberPaymentAndWithdraw = async (req, res) => {
   } catch (error) {
     console.error("Error in StaffConfirmPay:", error);
     return res.status(500).json({
+      status: false,
+      message: "Internal Server Error",
+      error: error.message,
+      data: [],
+    });
+  }
+};
+
+export const acUpdateData = async (req, res) => {
+  const { id, name, no, type, status } = req.body;
+
+  if (!id) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing AC ID",
+      data: [],
+    });
+  }
+
+  try {
+    const updates = [];
+    const values = [];
+    let paramIndex = 2; // $1 = acId
+
+    // ✅ Handle uploaded QR image
+    const imageArray =
+      req.files && req.files.length > 0
+        ? req.files.map((file) => file.filename)
+        : [];
+
+    if (imageArray.length > 0) {
+      updates.push(`acqr = $${paramIndex++}`);
+      values.push(imageArray[0]);
+    }
+
+    if (name) {
+      updates.push(`acname = $${paramIndex++}`);
+      values.push(name);
+    }
+
+    if (no) {
+      updates.push(`acno = $${paramIndex++}`);
+      values.push(no);
+    }
+
+    if (type) {
+      updates.push(`actype = $${paramIndex++}`);
+      values.push(type);
+    }
+
+    // ✅ allow status = '0' or '1'
+    if (status !== undefined) {
+      updates.push(`status = $${paramIndex++}`);
+      values.push(status);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).send({
+        status: false,
+        message: "No data provided to update",
+        data: [],
+      });
+    }
+
+    const query = `
+      UPDATE public.tbreceive_ac
+      SET ${updates.join(", ")}
+      WHERE acid = $1
+      RETURNING acname, acno, actype, acqr, status as active_status;
+    `;
+
+    const result = await dbExecution(query, [id, ...values]);
+
+    if (!result || result.rowCount === 0) {
+      return res.status(404).send({
+        status: false,
+        message: "AC record not found",
+        data: [],
+      });
+    }
+
+    return res.status(200).send({
+      status: true,
+      message: "AC updated successfully",
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Error in acUpdateData:", error);
+    res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      error: error.message,
+      data: [],
+    });
+  }
+};
+
+export const queryACData = async (req, res) => {
+  try {
+    const baseUrl = "http://localhost:1789/";
+
+    const query = `
+      SELECT acid, acname, acno, acqr, actype, status, cdate
+      FROM public.tbreceive_ac
+      WHERE status = '1'
+      ORDER BY cdate DESC;
+    `;
+
+    const selectResult = await dbExecution(query);
+
+    if (!selectResult || selectResult.rowCount === 0) {
+      return res.status(200).send({
+        status: true,
+        message: "No data found",
+        data: [],
+      });
+    }
+
+    const acdata = selectResult.rows.map((row) => ({
+      ...row,
+      acqr: row.acqr ? `${baseUrl}${row.acqr}` : null,
+    }));
+
+    return res.status(200).send({
+      status: true,
+      message: "Query successful",
+      data: acdata,
+    });
+  } catch (error) {
+    console.error("Error in queryACData:", error);
+    return res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      data: [],
+      error: error.message,
+    });
+  }
+};
+
+export const insertACData = async (req, res) => {
+  try {
+    const { name, no, type } = req.body;
+
+    // ✅ Validate required fields
+    if (!name || !no || !type) {
+      return res.status(400).send({
+        status: false,
+        message: "Missing required fields (name, no, type)",
+        data: [],
+      });
+    }
+
+    // ✅ Generate ID
+    const id = "ac" + Math.random().toString(36).substring(2, 10);
+
+    // ✅ Get uploaded image (use first one)
+    const imageArray =
+      req.files && req.files.length > 0
+        ? req.files.map((file) => file.filename)
+        : [];
+
+    const acqr = imageArray.length > 0 ? imageArray[0] : null;
+
+    const query = `
+      INSERT INTO public.tbreceive_ac(
+        acid, acname, acno, acqr, actype, status, cdate
+      )
+      VALUES ($1, $2, $3, $4, $5, '1', NOW())
+      RETURNING *;
+    `;
+
+    const values = [id, name, no, acqr, type];
+
+    const result = await dbExecution(query, values);
+
+    if (!result || result.rowCount === 0) {
+      return res.status(400).send({
+        status: false,
+        message: "Insert failed",
+        data: [],
+      });
+    }
+
+    return res.status(201).send({
+      status: true,
+      message: "Insert AC data successful",
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Error in insertACData:", error);
+    res.status(500).send({
       status: false,
       message: "Internal Server Error",
       error: error.message,
