@@ -15,8 +15,7 @@ export const queryOrderDataOne = async (req, res) => {
 
     // ✅ Fetch data by id
     const dataQuery = `
-      SELECT id, productname, type, size, price,incomerate, custgmail, custaddress, 
-             memberid,membername, cdate, membercf, detail, cfdate
+      SELECT *
       FROM public.tborderpd
       WHERE id = $1
       ORDER BY cdate DESC;
@@ -107,8 +106,7 @@ export const queryOrderDataAll = async (req, res) => {
 
     // ✅ Fetch paginated data
     const dataQuery = `
-  SELECT id, productname as productname, type, size, price, qty, totalprice, incomerate, custgmail, custaddress, memberid, membername, cdate, membercf, detail, cfdate
-	FROM public.tborderpd ORDER BY cdate DESC
+  SELECT * FROM public.tborderpd ORDER BY cdate DESC
       LIMIT $1 OFFSET $2;
     `;
 
@@ -204,9 +202,9 @@ export const insertOrderData = async (req, res) => {
     // ✅ Define base insert SQL
     const query = `
 	INSERT INTO public.tborderpd(
-	id, productid, productname, price, qty, totalprice, ProfitRate, income, custgmail,
+	id, productid, productname, type, price, qty, totalprice, ProfitRate, income, custgmail,
 	custaddress, memberid, cdate, sellstatus)
-   VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9,$10,$11, NOW(),'pending')
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9,$10,$11,$12, NOW(),'pending')
       RETURNING *;
     `;
 
@@ -217,6 +215,7 @@ export const insertOrderData = async (req, res) => {
       const {
         productId,
         productName,
+        type,
         price,
         qty,
         totalPrice,
@@ -229,6 +228,7 @@ export const insertOrderData = async (req, res) => {
         id,
         productId,
         productName,
+        type,
         price || null,
         qty || null,
         totalPrice || null,

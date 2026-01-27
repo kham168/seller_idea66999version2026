@@ -450,9 +450,8 @@ export const memberUpdateAccountId = async (req, res) => {
     });
   }
 };
-
 export const memberUpdateImageProfile = async (req, res) => {
-  const { id } = req.body;
+  const { id, name, lastName, accountName, accountId } = req.body;
 
   if (!id) {
     return res.status(400).send({
@@ -463,42 +462,69 @@ export const memberUpdateImageProfile = async (req, res) => {
   }
 
   try {
-    // ✅ Collect uploaded filenames (use first one for profile image)
+    const updates = [];
+    const values = [];
+    let paramIndex = 2; // $1 is reserved for id
+
+    // ✅ Collect uploaded image
     const imageArray =
       req.files && req.files.length > 0
         ? req.files.map((file) => file.filename)
         : [];
 
-    // ✅ Ensure at least one image is uploaded
-    if (imageArray.length === 0) {
+    if (imageArray.length > 0) {
+      updates.push(`profileimage = $${paramIndex++}`);
+      values.push(imageArray[0]); // only first image
+    }
+
+    if (name) {
+      updates.push(`name = $${paramIndex++}`);
+      values.push(name);
+    }
+    if (lastName) {
+      updates.push(`lastname = $${paramIndex++}`);
+      values.push(lastName);
+    }
+
+    if (accountName) {
+      updates.push(`accountname = $${paramIndex++}`);
+      values.push(accountName);
+    }
+
+    if (accountId) {
+      updates.push(`bankaccount = $${paramIndex++}`);
+      values.push(accountId);
+    }
+
+    // ❗ Nothing to update
+    if (updates.length === 0) {
       return res.status(400).send({
         status: false,
-        message: "No image uploaded",
+        message: "No data provided to update",
         data: [],
       });
     }
 
-    // ✅ Update the member's profile image (just first image)
-    const updateProfileImage = `
+    const query = `
       UPDATE public.tbmember
-      SET profileimage = $2
+      SET ${updates.join(", ")}
       WHERE id = $1
       RETURNING *;
     `;
 
-    const result = await dbExecution(updateProfileImage, [id, imageArray[0]]);
+    const result = await dbExecution(query, [id, ...values]);
 
     if (!result || result.rowCount === 0) {
       return res.status(404).send({
         status: false,
-        message: "Member not found or update failed",
+        message: "Member not found",
         data: [],
       });
     }
 
     return res.status(200).send({
       status: true,
-      message: "Profile image updated successfully",
+      message: "Profile updated successfully",
       data: result.rows[0],
     });
   } catch (error) {
@@ -537,10 +563,10 @@ export const getDataForHomePage = async (req, res) => {
 
     // 2️⃣ Top 5 products by order count
     const getTopData = `
-      SELECT productname, COUNT(*)::int AS qty
+      SELECT type, COUNT(*)::int AS qty
       FROM public.tborderpd
       WHERE memberid = $1
-      GROUP BY productname
+      GROUP BY type
       ORDER BY qty DESC
       LIMIT 5;
     `;

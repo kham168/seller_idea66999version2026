@@ -355,3 +355,21 @@ Params: ,p1769138768574,Frontend,one,0,25009,[{ "band": "AA", "size": "35" }],[{
     
 
 Params: 3,15,0
+2026-01-27 13:28:18	Query: 
+	INSERT INTO public.tborderpd(
+	id, productid, productname,type, price, qty, totalprice, ProfitRate, income, custgmail,
+	custaddress, memberid, cdate, sellstatus)
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9,$10,$11,12, NOW(),'pending')
+      RETURNING *;
+    
+
+Params: orderjzk0l1zvf3,p1769162765528,,candy,270,2,280,2,5,,[{"band":"Good","name":"AA"}],3
+2026-01-27 13:28:18	Query: 
+	INSERT INTO public.tborderpd(
+	id, productid, productname,type, price, qty, totalprice, ProfitRate, income, custgmail,
+	custaddress, memberid, cdate, sellstatus)
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9,$10,$11,12, NOW(),'pending')
+      RETURNING *;
+    
+
+Params: orderjzk0l1zvf3,p1769324295055,,car,270,1,180,3,5,,[{"band":"Good","name":"AA"}],3
