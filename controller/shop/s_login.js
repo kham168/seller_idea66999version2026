@@ -574,7 +574,7 @@ export const getDataForHomePage = async (req, res) => {
 
     // 3️⃣ Latest 15 orders
     const getOrderList = `
-      SELECT productname, price, qty, totalprice,
+      SELECT productname,type, price, qty, totalprice,
              profitrate, income, cdate,
              sellstatus, detail,
              amtb, amtf, incomestatus,
