@@ -95,7 +95,278 @@ export const adminLogin = async (req, res) => {
     });
   }
 };
-  
+
+export const updatePassword = async (req, res) => {
+  const { gmail, oldPassword, newPassword } = req.body;
+
+  if (!gmail || !oldPassword || !newPassword) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing required fields",
+      data: [],
+    });
+  }
+
+  if (newPassword.length < 8) {
+    return res.status(400).send({
+      status: false,
+      message: "Password must be at least 8 characters long",
+      data: [],
+    });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(gmail)) {
+    return res.status(400).send({
+      status: false,
+      message: "Invalid email format",
+      data: [],
+    });
+  }
+
+  try {
+    let user = null;
+    let userType = null;
+
+    // 🔍 Check admin first
+    const adminQuery = `
+      SELECT id, name, '' AS lastname, gmail, password_hash AS password
+      FROM public.tbadminuser
+      WHERE gmail = $1 AND status = '1';
+    `;
+
+    const adminResult = await dbExecution(adminQuery, [gmail]);
+
+    if (adminResult.rowCount > 0) {
+      user = adminResult.rows[0];
+      userType = "staff";
+    } else {
+      // 🔍 Check member
+      const memberQuery = `
+        SELECT id, name, lastname, gmail, password
+        FROM public.tbmember
+        WHERE gmail = $1 AND status = '1';
+      `;
+
+      const memberResult = await dbExecution(memberQuery, [gmail]);
+
+      if (memberResult.rowCount > 0) {
+        user = memberResult.rows[0];
+        userType = "shop";
+      }
+    }
+
+    if (!user) {
+      return res.status(401).send({
+        status: false,
+        message: "Invalid email or password",
+        data: [],
+      });
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).send({
+        status: false,
+        message: "Old password is incorrect",
+        data: [],
+      });
+    }
+
+    const newHashedPassword = await bcrypt.hash(newPassword, 10);
+
+    let updateResult;
+    if (userType === "staff") {
+      updateResult = await dbExecution(
+        `UPDATE public.tbadminuser SET password_hash = $2 WHERE id = $1 AND status = '1'`,
+        [user.id, newHashedPassword],
+      );
+    } else {
+      updateResult = await dbExecution(
+        `UPDATE public.tbmember SET password = $2 WHERE id = $1 AND status = '1'`,
+        [user.id, newHashedPassword],
+      );
+    }
+
+    if (!updateResult || updateResult.rowCount === 0) {
+      return res.status(500).send({
+        status: false,
+        message: "Password update failed",
+        data: [],
+      });
+    }
+
+    return res.status(200).send({
+      status: true,
+      message: "Password updated successfully",
+      data: {
+        id: user.id,
+        gmail,
+        role: userType,
+      },
+    });
+  } catch (error) {
+    console.error("Error in UpdatePassword:", error);
+    return res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      error: error.message,
+      data: [],
+    });
+  }
+};
+export const updatePasswordConfirmByMail = async (req, res) => {
+  const { gmail, code, newPassword, step } = req.body;
+
+  if (!gmail || !step) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing required fields",
+      data: [],
+    });
+  }
+
+  if (!["1", "2"].includes(step)) {
+    return res.status(400).send({
+      status: false,
+      message: "Invalid step",
+      data: [],
+    });
+  }
+
+  if (step === "2" && (!code || !newPassword)) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing code or new password",
+      data: [],
+    });
+  }
+
+  if (newPassword && newPassword.length < 8) {
+    return res.status(400).send({
+      status: false,
+      message: "Password must be at least 8 characters long",
+      data: [],
+    });
+  }
+
+  try {
+    let user = null;
+    let userType = null;
+
+    // 🔍 Admin
+    const adminResult = await dbExecution(
+      `SELECT id, gmail FROM public.tbadminuser WHERE gmail = $1 AND status = '1'`,
+      [gmail],
+    );
+
+    if (adminResult.rowCount > 0) {
+      user = adminResult.rows[0];
+      userType = "staff";
+    } else {
+      // 🔍 Member
+      const memberResult = await dbExecution(
+        `SELECT id, gmail FROM public.tbmember WHERE gmail = $1 AND status = '1'`,
+        [gmail],
+      );
+
+      if (memberResult.rowCount > 0) {
+        user = memberResult.rows[0];
+        userType = "shop";
+      }
+    }
+
+    if (!user) {
+      return res.status(401).send({
+        status: false,
+        message: "Email not found",
+        data: [],
+      });
+    }
+
+    // ================= STEP 1: SEND CODE =================
+    if (step === "1") {
+      const pin = Math.floor(100000 + Math.random() * 900000).toString();
+
+      await dbExecution(
+        `
+        INSERT INTO public.tbcodecftoupdatepassword
+        (userid, usertype, code, status, cdate)
+        VALUES ($1, $2, $3, '1', NOW())
+        `,
+        [user.id, userType, pin],
+      );
+
+      // TODO: send pin via email here
+
+      return res.status(200).send({
+        status: true,
+        message: "Verification code sent to email",
+        data: {},
+      });
+    }
+
+    // ================= STEP 2: VERIFY CODE & UPDATE =================
+    const pinResult = await dbExecution(
+      `
+      SELECT code, cdate
+      FROM public.tbcodecftoupdatepassword
+      WHERE userid = $1
+        AND usertype = $2
+        AND status = '1'
+        AND cdate > NOW() - INTERVAL '10 minutes'
+      ORDER BY cdate DESC
+      LIMIT 1
+      `,
+      [user.id, userType],
+    );
+
+    if (pinResult.rowCount === 0 || pinResult.rows[0].code !== code) {
+      return res.status(400).send({
+        status: false,
+        message: "Invalid or expired code",
+        data: [],
+      });
+    }
+
+    const newHashedPassword = await bcrypt.hash(newPassword, 10);
+
+    if (userType === "staff") {
+      await dbExecution(
+        `UPDATE public.tbadminuser SET password_hash = $2 WHERE id = $1`,
+        [user.id, newHashedPassword],
+      );
+    } else {
+      await dbExecution(
+        `UPDATE public.tbmember SET password = $2 WHERE id = $1`,
+        [user.id, newHashedPassword],
+      );
+    }
+
+    await dbExecution(
+      `UPDATE public.tbcodecftoupdatepassword SET status = '0' WHERE userid = $1 AND code = $2`,
+      [user.id, code],
+    );
+
+    return res.status(200).send({
+      status: true,
+      message: "Password updated successfully",
+      data: {
+        gmail,
+        role: userType,
+      },
+    });
+  } catch (error) {
+    console.error("Error in updatePasswordConfirmByMail:", error);
+    return res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      error: error.message,
+      data: [],
+    });
+  }
+};
+
 export const queryAdminData = async (req, res) => {
   const id = req.query.id ?? 0;
 

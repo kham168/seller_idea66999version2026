@@ -373,3 +373,34 @@ Params: orderjzk0l1zvf3,p1769162765528,,candy,270,2,280,2,5,,[{"band":"Good","na
     
 
 Params: orderjzk0l1zvf3,p1769324295055,,car,270,1,180,3,5,,[{"band":"Good","name":"AA"}],3
+2026-01-28 14:02:37	Query: 
+   select * from (
+   SELECT j.memberid, p.*
+   FROM public.tbproduct p
+   LEFT JOIN public.tbmemberjoinproduct j 
+   ON j.productid = p.id
+   AND j.memberid = $1 and j.status='1'
+   where p.status = '1'
+    )s where s.memberid is not null
+  group  by 
+	memberid,id,modelname,type,price1,price2,size,productdetail,profitrate,image,star,totalsell,status,cdate
+	order by cdate desc
+    order by cdate desc
+      LIMIT $2 OFFSET $3;
+    
+
+Params: 1769572623279,12,0
+2026-01-28 14:05:17	Query: 
+      select count(*) AS total from (
+   SELECT j.memberid, p.*
+   FROM public.tbproduct p
+   LEFT JOIN public.tbmemberjoinproduct j 
+  ON j.productid = p.id
+  AND j.memberid = $1 and j.status='1'
+   where p.status = '1' 
+     group  by 
+	memberid,id,modelname,type,price1,price2,size,productdetail,profitrate,image,star,totalsell,status,cdate
+     )s where s.memberid is not null;
+    
+
+Params: 1769572623279

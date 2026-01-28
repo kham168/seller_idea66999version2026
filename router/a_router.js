@@ -14,7 +14,7 @@ import {
   adminLogin,
   queryAdminData,
   admin_register,
-  UpdateAdminStatus,queryAdminAll
+  UpdateAdminStatus,queryAdminAll,updatePassword,updatePasswordConfirmByMail
 } from "../controller/admin/a_login.js";
 import {confirmSellStatus,confirmIncomeIntoMemberWallet} from "../controller/admin/a_order.js";
 import {insertData} from "../controller/admin/a_product.js";
@@ -43,6 +43,8 @@ router.post("/insertACData", uploadImage, insertACData);
 router.get("/getACData", queryACData);
 router.post("/updateACData", uploadImage, acUpdateData);
 router.post("/confirmSellStatus", confirmSellStatus);
+router.post("/updatePassword", updatePassword); 
+router.post("/updatePasswordCFByMail", updatePasswordConfirmByMail);
 router.post("/confirmIncomeToMember", confirmIncomeIntoMemberWallet);
 
 export default router;

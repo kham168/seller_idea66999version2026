@@ -26,8 +26,10 @@ if (!id) {
    LEFT JOIN public.tbmemberjoinproduct j 
   ON j.productid = p.id
   AND j.memberid = $1 and j.status='1'
-   where p.status = '1'
-    )s where s.memberid is not null;
+   where p.status = '1' 
+     group  by 
+	memberid,id,modelname,type,price1,price2,size,productdetail,profitrate,image,star,totalsell,p.status,p.cdate
+     )s where s.memberid is not null;
     `;
     const countResult = await dbExecution(countQuery, [id]);
     const total = parseInt(countResult.rows[0]?.total || 0, 10);
@@ -96,7 +98,10 @@ if (!id) {
    ON j.productid = p.id
    AND j.memberid = $1 and j.status='1'
    where p.status = '1'
-    )s where s.memberid is not null order by cdate desc
+    )s where s.memberid is not null
+  group  by 
+	memberid,id,modelname,type,price1,price2,size,productdetail,profitrate,image,star,totalsell,status,cdate
+    order by cdate desc
       LIMIT $2 OFFSET $3;
     `;
 
@@ -194,7 +199,9 @@ export const queryAllProductWhichOneNoJoinWithId = async (req, res) => {
   ON j.productid = p.id
   AND j.memberid = $1
 	where p.status = '1' and p.cdate <= current_date -1
-    )s where s.memberid is null;
+     group  by 
+	memberid,id,modelname,type,price1,price2,size,productdetail,profitrate,image,star,totalsell,p.status,p.cdate
+     )s where s.memberid is null;
     `;
     const countResult = await dbExecution(countQuery, [id]);
     const total = parseInt(countResult.rows[0]?.total || 0, 10);
@@ -211,6 +218,8 @@ export const queryAllProductWhichOneNoJoinWithId = async (req, res) => {
   AND j.memberid = $1
 	where p.status = '1' and p.cdate <= current_date -1
     )s where s.memberid is null 
+    group  by 
+	memberid,id,modelname,type,price1,price2,size,productdetail,profitrate,image,star,totalsell,status,cdate
     LIMIT $2 OFFSET $3;
     `;
 
@@ -304,6 +313,8 @@ export const queryAllProductWhichOneNoJoinWithIdNewData = async (req, res) => {
   ON j.productid = p.id
   AND j.memberid = $1
 	where p.status = '1' and p.cdate >= current_date -1
+     group  by 
+	memberid,id,modelname,type,price1,price2,size,productdetail,profitrate,image,star,totalsell,p.status,p.cdate
     )s where s.memberid is null;
     `;
     const countResult = await dbExecution(countQuery, [id]);
@@ -321,6 +332,9 @@ export const queryAllProductWhichOneNoJoinWithIdNewData = async (req, res) => {
   AND j.memberid = $1
 	where p.status = '1' and p.cdate >= current_date -1
     )s where s.memberid is null 
+    group by 
+	memberid,id,modelname,type,price1,price2,size,productdetail,profitrate,image,star,totalsell,status,cdate
+	
     LIMIT $2 OFFSET $3;
     `;
 
