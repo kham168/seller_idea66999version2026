@@ -1,6 +1,7 @@
 import { dbExecution } from "../../dbconfig/dbconfig.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import { stat } from "fs";
 
 ///===== login =====
 
@@ -380,76 +381,7 @@ export const member_register = async (req, res) => {
     });
   }
 };
-
-export const memberUpdateAccountId = async (req, res) => {
-  const { id, accountName, accountId } = req.body;
-
-  if (!id) {
-    return res.status(400).send({
-      status: false,
-      message: "Missing member ID",
-      data: [],
-    });
-  }
-
-  try {
-    // ✅ Build dynamic query
-    const updates = [];
-    const values = [id];
-    let paramIndex = 2;
-
-    if (accountName) {
-      updates.push(`accountname = $${paramIndex++}`);
-      values.push(accountName);
-    }
-
-    if (accountId) {
-      updates.push(`bankaccount = $${paramIndex++}`);
-      values.push(accountId);
-    }
-
-    // ✅ Check if there’s anything to update
-    if (updates.length === 0) {
-      return res.status(400).send({
-        status: false,
-        message: "No account data provided to update",
-        data: [],
-      });
-    }
-
-    // ✅ Construct final SQL
-    const query = `
-      UPDATE public.tbmember
-      SET ${updates.join(", ")}
-      WHERE id = $1
-      RETURNING *;
-    `;
-
-    const result = await dbExecution(query, values);
-
-    if (!result || result.rowCount === 0) {
-      return res.status(404).send({
-        status: false,
-        message: "Member not found or no data updated",
-        data: [],
-      });
-    }
-
-    return res.status(200).send({
-      status: true,
-      message: "updated successfully",
-      data: result.rows[0],
-    });
-  } catch (error) {
-    console.error("Error in memberUpdateAccountId:", error);
-    return res.status(500).send({
-      status: false,
-      message: "Internal Server Error",
-      error: error.message,
-      data: [],
-    });
-  }
-};
+ 
 export const memberUpdateImageProfile = async (req, res) => {
   const { id, name, lastName, accountName, accountId } = req.body;
 

@@ -18,24 +18,22 @@ import {
   queryMemberData,
   memberLogin,
   member_register,
-  memberUpdateAccountId,
   memberUpdateImageProfile,getDataForHomePage
 } from "../controller/shop/s_login.js";
-const route = Route();
+const router = Route();
 
-route.get("/getProductList", queryAllProductByMemberId);
-route.get("/toJoinProduct", queryAllProductWhichOneNoJoinWithId);
-route.get("/getDataForHomePage", getDataForHomePage);
-route.get("/toJoinProductNew", queryAllProductWhichOneNoJoinWithIdNewData);
-route.get("/getMemberData", queryMemberData);
-route.post("/memberRegister", member_register);
-route.post("/memberLogin", memberLogin);
-route.post("/joinProduct", insertJoinProductId);
-route.put("/unJoinProduct", UnJoinProduct);
-route.put("/updateAccount", memberUpdateAccountId);
-route.put("/updateProfileImage", uploadImage, memberUpdateImageProfile);
-route.get("/getLogsPayment", query_logs_adjust_and_payment);
-route.put("/memberRefill", uploadImage, member_refill_wallet);
-route.post("/withdraw", member_withdraw_credit);
+router.get("/getProductList", queryAllProductByMemberId);
+router.get("/toJoinProduct", queryAllProductWhichOneNoJoinWithId);
+router.get("/getDataForHomePage", getDataForHomePage);
+router.get("/toJoinProductNew", queryAllProductWhichOneNoJoinWithIdNewData);
+router.get("/getMemberData", queryMemberData);
+router.post("/memberRegister", member_register);
+router.post("/memberLogin", memberLogin);
+router.post("/joinProduct", insertJoinProductId);
+router.put("/unJoinProduct", UnJoinProduct);
+router.put("/updateProfileImage", uploadImage, memberUpdateImageProfile);
+router.get("/getLogsPayment", query_logs_adjust_and_payment);
+router.put("/memberRefill", uploadImage, member_refill_wallet);
+router.post("/withdraw", member_withdraw_credit);
 
-export default route;
+export default router;

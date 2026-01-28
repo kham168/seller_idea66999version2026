@@ -95,6 +95,40 @@ export const adminLogin = async (req, res) => {
     });
   }
 };
+export const getAllUserAC = async (req, res) => {
+  const { type } = req.query;
+
+  if (type !== "admin") {
+    return res.status(403).send({
+      status: false,
+      message: "Access denied",
+      data: [],
+    });
+  }
+
+  try {
+    const query = `
+      SELECT id, name, usertype, gmail, status, cdate
+      FROM public.tbadminuser
+      ORDER BY cdate DESC;
+    `;
+
+    const result = await dbExecution(query, []);
+
+    return res.status(200).send({
+      status: true,
+      message: result.rowCount > 0 ? "Query successful" : "No data found",
+      data: result.rows,
+    });
+  } catch (error) {
+    console.error("Error in getAllUserAC:", error);
+    return res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      data: [],
+    });
+  }
+};
 
 export const updatePassword = async (req, res) => {
   const { gmail, oldPassword, newPassword } = req.body;
@@ -215,6 +249,7 @@ export const updatePassword = async (req, res) => {
     });
   }
 };
+
 export const updatePasswordConfirmByMail = async (req, res) => {
   const { gmail, code, newPassword, step } = req.body;
 
@@ -570,6 +605,67 @@ export const queryAdminAll = async (req, res) => {
       status: false,
       message: "Internal Server Error",
       error: error.message,
+      data: [],
+    });
+  }
+};
+
+
+export const memberUpdateBeLongToUser = async (req, res) => {
+  const { id, type, status, uId } = req.body;
+
+  if (!id) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing member ID",
+      data: [],
+    });
+  }
+
+  if (!status && !uId) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing status or uId",
+      data: [],
+    });
+  }
+
+  if (type !== "admin") {
+    return res.status(403).send({
+      status: false,
+      message: "Access denied",
+      data: [],
+    });
+  }
+
+  try {
+    const query = `
+      UPDATE public.tbmember
+      SET  status=$2, becustofadmin = $3
+      WHERE id = $1
+      RETURNING id, status, becustofadmin;
+    `;
+
+    const result = await dbExecution(query, [id, status, uId]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).send({
+        status: false,
+        message: "Member not found",
+        data: [],
+      });
+    }
+
+    return res.status(200).send({
+      status: true,
+      message: "Updated successfully",
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Error in memberUpdateBeLongToUser:", error);
+    return res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
       data: [],
     });
   }
