@@ -43,10 +43,11 @@ if (!id) {
   if (isFirstPage) {
       try {
         const querySelect = `
-      SELECT id, name, lastname, gender, gmail, country, state, 
-             profileimage, accountname, bankaccount, 
-             wallet, totalsell, totalincome, totalwithdrawal, status, 
-             becustofadmin, cdate
+      SELECT id, name, shopname, gender, gmail, password, 
+country, state, profileimage, peoplecarorpassport,
+personalimage, accountname, bankaccount, walletqr, 
+subscribe, star, wallet, totalsell, totalincome, 
+totalwithdrawal, status, statusdetail, becustofadmin, cdate
       FROM public.tbmember WHERE id = $1 AND status = '1' limit 1;
     `;
 

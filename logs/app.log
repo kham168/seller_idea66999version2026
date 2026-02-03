@@ -404,3 +404,54 @@ Params: 1769572623279,12,0
     
 
 Params: 1769572623279
+2026-02-03 18:27:09	Query: 
+      UPDATE public.tbmember
+      SET wallet = $2
+      WHERE id = $1
+      RETURNING *;
+    
+
+Params: 4,5200520002000
+2026-02-03 18:27:10	Query: 
+      INSERT INTO public.tblogsmemberpayment(
+        id, memberid, orderid, type, amount, creditb, creditf, status, cdate
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, '1', NOW())
+      RETURNING *;
+    
+
+Params: tz59ilruo2,4,23,tester,2000,520052000,5200520002000
+2026-02-03 18:28:02	Query: 
+      UPDATE public.tbmember
+      SET wallet = $2
+      WHERE id = $1
+      RETURNING *;
+    
+
+Params: 4,5200520002000
+2026-02-03 18:28:02	Query: 
+      INSERT INTO public.tblogsmemberpayment(
+        id, memberid, orderid, type, amount, creditb, creditf, status, cdate
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, '1', NOW())
+      RETURNING *;
+    
+
+Params: 17racvxkra,4,23,33,2000,520052000,5200520002000
+2026-02-03 18:33:39	Query: 
+      UPDATE public.tbmember
+      SET wallet = $2
+      WHERE id = $1
+      RETURNING *;
+    
+
+Params: 4,2200020002000
+2026-02-03 18:33:39	Query: 
+      INSERT INTO public.tblogsmemberpayment(
+        id, memberid, orderid, type, amount, creditb, creditf, status, cdate
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, '1', NOW())
+      RETURNING *;
+    
+
+Params: yjz94truj8,4,23,33,2000,220002000,2200020002000

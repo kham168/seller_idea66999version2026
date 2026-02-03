@@ -18,10 +18,12 @@ import {
 } from "../controller/admin/a_login.js";
 import {confirmSellStatus,confirmIncomeIntoMemberWallet} from "../controller/admin/a_order.js";
 import {insertData} from "../controller/admin/a_product.js";
-import {StaffConfirmPayForMemberPaymentAndWithdraw,insertACData,acUpdateData,queryACData} from "../controller/admin/a_payment.js";
+import {StaffConfirmPayForMemberPaymentAndWithdraw,insertACData,acUpdateData,queryACData,adminConfirmUserAccount,adminManualAddCreditToMember123} from "../controller/admin/a_payment.js";
 import { uploadImage } from "../middleware/product.uploadimage.js";
 //import { protect } from "../middleware/token.js"; insertOrderData
 const router = Router();
+// 
+ // 
 
 router.get("/getOrderOne", queryOrderDataOne);
 router.get("/getOrderAll", queryOrderDataAll);
@@ -48,5 +50,7 @@ router.post("/confirmSellStatus", confirmSellStatus);
 router.put("/updatePassword", updatePassword);
 router.put("/updatePasswordCFByMail", updatePasswordConfirmByMail);
 router.post("/confirmIncomeToMember", confirmIncomeIntoMemberWallet);
+router.put("/adminConfirmUACID", adminConfirmUserAccount);
+router.put("/adminManualACDFMB", adminManualAddCreditToMember123);
 
 export default router;

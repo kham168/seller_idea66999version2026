@@ -71,7 +71,7 @@ export const memberLogin = async (req, res) => {
 
     // 1️⃣ Try ADMIN login first
     const adminQuery = `
-      SELECT id, name,'' as lastname, usertype, gmail, password_hash as password
+      SELECT id, name,'' as shopname, usertype, gmail, password_hash as password
       FROM public.tbadminuser
       WHERE gmail = $1 AND status = '1';
     `;
@@ -84,7 +84,7 @@ export const memberLogin = async (req, res) => {
     } else {
       // 2️⃣ If not admin → try MEMBER
       const memberQuery = `
-        SELECT id, name, lastname, 'shop' as usertype, gmail, password
+        SELECT id, name, shopname, 'shop' as usertype, gmail, password
         FROM public.tbmember
         WHERE gmail = $1 AND status = '1';
       `;
@@ -242,10 +242,15 @@ export const queryMemberData = async (req, res) => {
     const baseUrl = "http://localhost:1789/";
 
     const querySelect = `
-      SELECT id, name, lastname, gender, gmail, password, country, state, 
-             profileimage, accountname, bankaccount , 
-             wallet, totalsell, totalincome, totalwithdrawal, status, 
-             becustofadmin, cdate
+      SELECT 
+        id, name, shopname, gender, gmail,
+        country, state,
+        profileimage,
+        peoplecarorpassport,
+        personalimage,
+        accountname, bankaccount, walletqr,
+        subscribe, star, wallet, totalsell, totalincome,
+        totalwithdrawal, status, statusdetail, becustofadmin, cdate
       FROM public.tbmember 
       WHERE id = $1 AND status = '1';
     `;
@@ -260,22 +265,21 @@ export const queryMemberData = async (req, res) => {
       });
     }
 
-    // ✅ Append full URL to profileimage if exists
+    // ✅ Append full URL to all image columns
     const memberData = selectResult.rows.map((row) => {
-      let imagePath = null;
-
-      if (row.profileimage) {
-        // Handle if it's stored as array or string
-        if (Array.isArray(row.profileimage)) {
-          imagePath = row.profileimage.map((img) => `${baseUrl}${img}`);
-        } else {
-          imagePath = `${baseUrl}${row.profileimage}`;
-        }
-      }
+      const buildUrl = (img) => {
+        if (!img) return null;
+        return Array.isArray(img)
+          ? img.map((i) => `${baseUrl}${i}`)
+          : `${baseUrl}${img}`;
+      };
 
       return {
         ...row,
-        profileimage: imagePath,
+        profileimage: buildUrl(row.profileimage),
+        peoplecarorpassport: buildUrl(row.peoplecarorpassport),
+        personalimage: buildUrl(row.personalimage),
+        walletqr: buildUrl(row.walletqr),
       };
     });
 
@@ -298,7 +302,7 @@ export const queryMemberData = async (req, res) => {
 };
 
 export const member_register = async (req, res) => {
-  const { id, name, lastname, gender, gmail, password, country } = req.body;
+  const { id, name, shopName, gender, gmail, password, country } = req.body;
 
   if (!id || !password || !gmail) {
     return res.status(400).send({
@@ -344,14 +348,14 @@ export const member_register = async (req, res) => {
     // ✅ 4. Insert new member
     const insertQuery = `
       INSERT INTO public.tbmember(
-        id, name, lastname, gender, gmail, password, country, 
+        id, name, shopname, gender, gmail, password, country, 
         wallet, status, cdate
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, '0', '1', NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, $7, '0', '2', NOW())
       RETURNING *;
     `;
 
-    const values = [id, name, lastname, gender, gmail, hashedPassword, country];
+    const values = [id, name, shopName, gender, gmail, hashedPassword, country];
     const result = await dbExecution(insertQuery, values);
 
     if (!result || result.rowCount === 0) {
@@ -381,9 +385,8 @@ export const member_register = async (req, res) => {
     });
   }
 };
- 
 export const memberUpdateImageProfile = async (req, res) => {
-  const { id, name, lastName, accountName, accountId } = req.body;
+  const { id, name, shopName, accountName, accountId } = req.body;
 
   if (!id) {
     return res.status(400).send({
@@ -398,24 +401,28 @@ export const memberUpdateImageProfile = async (req, res) => {
     const values = [];
     let paramIndex = 2; // $1 is reserved for id
 
-    // ✅ Collect uploaded image
-    const imageArray =
-      req.files && req.files.length > 0
-        ? req.files.map((file) => file.filename)
-        : [];
+    // ✅ Get uploaded files from separate fields
+    const profileImageFile = req.files?.profileimage?.[0]?.filename || null;
+    const walletQrFile = req.files?.walletqr?.[0]?.filename || null;
 
-    if (imageArray.length > 0) {
+    if (profileImageFile) {
       updates.push(`profileimage = $${paramIndex++}`);
-      values.push(imageArray[0]); // only first image
+      values.push(profileImageFile);
+    }
+
+    if (walletQrFile) {
+      updates.push(`walletqr = $${paramIndex++}`);
+      values.push(walletQrFile);
     }
 
     if (name) {
       updates.push(`name = $${paramIndex++}`);
       values.push(name);
     }
-    if (lastName) {
-      updates.push(`lastname = $${paramIndex++}`);
-      values.push(lastName);
+
+    if (shopName) {
+      updates.push(`shopname = $${paramIndex++}`);
+      values.push(shopName);
     }
 
     if (accountName) {
@@ -428,7 +435,6 @@ export const memberUpdateImageProfile = async (req, res) => {
       values.push(accountId);
     }
 
-    // ❗ Nothing to update
     if (updates.length === 0) {
       return res.status(400).send({
         status: false,
@@ -441,7 +447,7 @@ export const memberUpdateImageProfile = async (req, res) => {
       UPDATE public.tbmember
       SET ${updates.join(", ")}
       WHERE id = $1
-      RETURNING profileimage, name, lastname, accountname, bankaccount;
+      RETURNING profileimage, walletqr, name, shopname, accountname, bankaccount;
     `;
 
     const result = await dbExecution(query, [id, ...values]);
@@ -470,6 +476,85 @@ export const memberUpdateImageProfile = async (req, res) => {
   }
 };
 
+export const memberConfirmIdentity = async (req, res) => {
+  const { id } = req.body;
+
+  if (!id) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing member ID",
+      data: [],
+    });
+  }
+
+  try {
+    const updates = [];
+    const values = [];
+    let paramIndex = 2; // $1 is reserved for id
+
+    const peopleCarOrPassport =
+      req.files?.peopleCarOrPassport?.[0]?.filename || null;
+    const personalImageArray = req.files?.personalImage
+      ? req.files.personalImage.map((file) => file.filename)
+      : [];
+
+    if (peopleCarOrPassport) {
+      updates.push(`peoplecarorpassport = $${paramIndex++}`);
+      values.push(peopleCarOrPassport);
+    }
+
+    if (personalImageArray.length > 0) {
+      updates.push(`personalimage = $${paramIndex++}`);
+      values.push(JSON.stringify(personalImageArray)); // store as JSON
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).send({
+        status: false,
+        message: "No data provided to update",
+        data: [],
+      });
+    }
+
+    const query = `
+      UPDATE public.tbmember
+      SET ${updates.join(", ")}
+      WHERE id = $1
+      RETURNING peoplecarorpassport, personalimage;
+    `;
+
+    const result = await dbExecution(query, [id, ...values]);
+
+    if (!result || result.rowCount === 0) {
+      return res.status(404).send({
+        status: false,
+        message: "Member not found",
+        data: [],
+      });
+    }
+
+    // ✅ parse JSON before sending response
+    const row = result.rows[0];
+    if (row.personalimage) {
+      row.personalimage = JSON.parse(row.personalimage);
+    }
+
+    return res.status(200).send({
+      status: true,
+      message: "Profile updated successfully",
+      data: row,
+    });
+  } catch (error) {
+    console.error("Error in memberConfirmIdentity:", error);
+    res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      error: error.message,
+      data: [],
+    });
+  }
+};
+
 export const getDataForHomePage = async (req, res) => {
   const memberId = req.query.id;
 
@@ -481,19 +566,44 @@ export const getDataForHomePage = async (req, res) => {
     });
   }
 
+  const baseUrl = "http://localhost:1789/";
+
   try {
     // 1️⃣ Member profile
     const getProfile = `
-      SELECT id, name, lastname, gender,
-             country, state, profileimage,
-             accountname, bankaccount,
-             wallet, totalsell, totalincome
+      SELECT 
+        id, name, shopname, gender, gmail,
+        country, state,
+        profileimage,
+        peoplecarorpassport,
+        personalimage,
+        accountname, bankaccount,
+        walletqr,
+        subscribe, star, wallet, totalsell,
+        totalincome, totalwithdrawal,
+        status, statusdetail, cdate
       FROM public.tbmember
       WHERE id = $1;
     `;
     const profileResult = await dbExecution(getProfile, [memberId]);
 
-    // 2️⃣ Top 5 products by order count
+    let profile = null;
+
+    if (profileResult.rows.length > 0) {
+      const p = profileResult.rows[0];
+
+      profile = {
+        ...p,
+        profileimage: p.profileimage ? baseUrl + p.profileimage : null,
+        peoplecarorpassport: p.peoplecarorpassport
+          ? baseUrl + p.peoplecarorpassport
+          : null,
+        personalimage: p.personalimage ? baseUrl + p.personalimage : null,
+        walletqr: p.walletqr ? baseUrl + p.walletqr : null,
+      };
+    }
+
+    // 2️⃣ Top 5 products
     const getTopData = `
       SELECT type, COUNT(*)::int AS qty
       FROM public.tborderpd
@@ -506,11 +616,12 @@ export const getDataForHomePage = async (req, res) => {
 
     // 3️⃣ Latest 15 orders
     const getOrderList = `
-      SELECT productname,type, price, qty, totalprice,
-             profitrate, income, cdate,
-             sellstatus, detail,
-             amtb, amtf, incomestatus,
-             incomeamt, memberamtb, memberantf, icfdate
+      SELECT 
+        productname, type, price, qty, totalprice,
+        profitrate, income, cdate,
+        sellstatus, detail,
+        amtb, amtf, incomestatus,
+        incomeamt, memberamtb, memberantf, icfdate
       FROM public.tborderpd
       WHERE memberid = $1
       ORDER BY cdate DESC
@@ -522,7 +633,7 @@ export const getDataForHomePage = async (req, res) => {
       status: true,
       message: "Query successful",
       data: {
-        profile: profileResult.rows[0] || null,
+        profile,
         topProducts: topResult.rows,
         recentOrders: orderResult.rows,
       },

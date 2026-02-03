@@ -1,57 +1,186 @@
 import { dbExecution } from "../../dbconfig/dbconfig.js";
 
-export const adminAddCreditToMemberWallet = async (req, res) => {
-  const { id, orderid, confirmType, amount } = req.body;
+export const adminConfirmUserAccount = async (req, res) => {
+  const { id, status, statusDetail } = req.body;
 
-  if (!id) {
+  if (!id || !status) {
     return res.status(400).send({
       status: false,
-      message: "Missing id",
+      message: "Missing id or status",
       data: [],
     });
   }
 
   try {
-    // 1️⃣ Get total price + member wallet
-    const querySelect = `
-      SELECT id As mid,wallet
-      FROM public.tbmember where id=$1;
+    const updateMemberData = `
+      UPDATE public.tbmember
+      SET status = $2,
+          statusdetail = $3
+      WHERE id = $1
+        AND status = '2'
+      RETURNING id, status, statusdetail;
     `;
-    const selectResult = await dbExecution(querySelect, [id]);
+
+    const memberUpdated = await dbExecution(updateMemberData, [
+      id,
+      status,
+      statusDetail || null,
+    ]);
+
+    // ❗ No row updated
+    if (!memberUpdated || memberUpdated.rowCount === 0) {
+      return res.status(404).send({
+        status: false,
+        message: "Member not found or status not eligible for update",
+        data: [],
+      });
+    }
+
+    return res.status(200).send({
+      status: true,
+      message: "Member account confirmed successfully",
+      data: memberUpdated.rows[0],
+    });
+  } catch (error) {
+    console.error("Error in adminConfirmUserAccount:", error);
+    return res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      error: error.message,
+      data: [],
+    });
+  }
+};
+
+export const adminManualAddCreditToMember123 = async (req, res) => {
+  const { id, orderid, confirmType, amount } = req.body;
+
+  if (!id || !amount) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing id or amount",
+      data: [],
+    });
+  }
+
+  const amountNum = Number(amount);
+  if (Number.isNaN(amountNum) || amountNum <= 0) {
+    return res.status(400).send({
+      status: false,
+      message: "Invalid amount",
+      data: [],
+    });
+  }
+
+  try {
+    const selectResult = await dbExecution(
+      `SELECT wallet FROM public.tbmember WHERE id=$1`,
+      [id],
+    );
+
+    if (selectResult.rowCount === 0) {
+      return res.status(404).send({
+        status: false,
+        message: "Member not found",
+        data: [],
+      });
+    }
+
+    const walletNum = Number(selectResult.rows[0].wallet) || 0;
+    const amountAfter = walletNum + amountNum;
+
+    const memberUpdated = await dbExecution(
+      `UPDATE public.tbmember SET wallet=$2 WHERE id=$1 RETURNING id, wallet`,
+      [id, amountAfter],
+    );
+
+    const logId = Math.random().toString(36).substring(2, 11);
+
+    const logInserted = await dbExecution(
+      `INSERT INTO public.tblogsmemberpayment
+       (id, memberid, orderid, type, amount, creditb, creditf, status, cdate)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'1',NOW())
+       RETURNING *`,
+      [
+        logId,
+        id,
+        orderid || null,
+        confirmType || "ADMIN_ADD",
+        amountNum,
+        walletNum,
+        amountAfter,
+      ],
+    );
+
+    return res.status(200).send({
+      status: true,
+      message: "Wallet credited successfully",
+      data: {
+        member: memberUpdated.rows[0],
+        log: logInserted.rows[0],
+      },
+    });
+  } catch (error) {
+    console.error("Error in adminManualAddCreditToMember123:", error);
+    return res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      error: error.message,
+      data: [],
+    });
+  }
+};
+
+export const adminAddCreditToMemberWallet = async (req, res) => {
+  const { id, orderid, confirmType, amount } = req.body;
+
+  if (!id || !amount) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing id or amount",
+      data: [],
+    });
+  }
+
+  const amountNum = Number(amount);
+  if (Number.isNaN(amountNum) || amountNum <= 0) {
+    return res.status(400).send({
+      status: false,
+      message: "Invalid amount",
+      data: [],
+    });
+  }
+
+  try {
+    // 1️⃣ Get member wallet
+    const selectQuery = `
+      SELECT wallet
+      FROM public.tbmember
+      WHERE id = $1;
+    `;
+    const selectResult = await dbExecution(selectQuery, [id]);
 
     if (!selectResult || selectResult.rowCount === 0) {
-      return res.status(400).send({
+      return res.status(404).send({
         status: false,
-        message: "No valid order found or member inactive",
+        message: "Member not found",
         data: [],
       });
     }
 
-    const { mid, wallet } = selectResult.rows[0];
+    const walletNum = Number(selectResult.rows[0].wallet) || 0;
+    const amountAfter = walletNum + amountNum;
 
-    // 2️⃣ Calculate new wallet balance
-    const walletNum = Number(wallet);
-
-    if (mid === 0) {
-      return res.status(400).send({
-        status: false,
-        message: "Insufficient balance in member wallet",
-        data: [],
-      });
-    }
-
-    const amountAfter = walletNum + amount;
-
-    // 3️⃣ Update member wallet
+    // 2️⃣ Update wallet
     const updateMember = `
       UPDATE public.tbmember
       SET wallet = $2
       WHERE id = $1
-      RETURNING *;
+      RETURNING id, wallet;
     `;
     const memberUpdated = await dbExecution(updateMember, [id, amountAfter]);
 
-    // 5️⃣ Insert payment log
+    // 3️⃣ Insert payment log
     const insertLog = `
       INSERT INTO public.tblogsmemberpayment(
         id, memberid, orderid, type, amount, creditb, creditf, status, cdate
@@ -60,30 +189,28 @@ export const adminAddCreditToMemberWallet = async (req, res) => {
       RETURNING *;
     `;
 
-    const newId = Math.random().toString(36).substring(2, 12); // simple unique id
+    const logId = crypto.randomUUID();
     const logInserted = await dbExecution(insertLog, [
-      newId,
+      logId,
       id,
-      orderid,
-      confirmType,
-      amount,
+      orderid || null,
+      confirmType || "ADMIN_ADD",
+      amountNum,
       walletNum,
       amountAfter,
     ]);
 
-    // ✅ Success response
     return res.status(200).send({
       status: true,
-      message: "Order confirmed and wallet updated successfully",
+      message: "Wallet credited successfully",
       data: {
-        order: orderUpdated.rows[0],
         member: memberUpdated.rows[0],
         log: logInserted.rows[0],
       },
     });
   } catch (error) {
-    console.error("Error in UpdateOrderListStatus:", error);
-    res.status(500).send({
+    console.error("Error in adminAddCreditToMemberWallet:", error);
+    return res.status(500).send({
       status: false,
       message: "Internal Server Error",
       error: error.message,
@@ -114,6 +241,38 @@ export const StaffConfirmPayForMemberPaymentAndWithdraw = async (req, res) => {
   }
 
   try {
+    // 1️⃣ Get member wallet
+    const sqlED = `
+     SELECT sum(totalprice) as total
+	FROM public.tborderpd where memberid=$1 and sellstatus='pending'
+    `;
+    const resulted = await dbExecution(sqlED, [memberId]);
+
+    if (resulted.rows.length === 0) {
+      return res.status(404).json({
+        status: false,
+        message: "Member not found",
+        data: [],
+      });
+    }
+
+    const totalAmountPending = Number(resulted.rows[0].total);
+
+    if (totalAmountPending > 0) {
+      const updateLog = `
+     Update public.tblogsmemberpayment set status='fail',resultdesc='Some orders are currently pending.' where id=$1;
+    `;
+
+      const logResultA = await dbExecution(updateLog, [id]);
+
+      return res.status(404).json({
+        status: false,
+        message:
+          "Failed to confirm payment. Some orders are currently pending.",
+        data: [],
+      });
+    }
+
     // 1️⃣ Get member wallet
     const sql = `
       SELECT wallet, totalwithdrawal

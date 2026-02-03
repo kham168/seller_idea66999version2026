@@ -12,13 +12,15 @@ import {
   queryAllProductWhichOneNoJoinWithIdNewData,
   insertJoinProductId,
   UnJoinProduct,
-} from "../controller/shop/s_product.js"; 
+} from "../controller/shop/s_product.js";
 import { uploadImage } from "../middleware/refillwallet.upload.js";
+import upload from "../middleware/updateACimage.uploadimage.js";
 import {
   queryMemberData,
   memberLogin,
   member_register,
-  memberUpdateImageProfile,getDataForHomePage
+  memberUpdateImageProfile,memberConfirmIdentity,
+  getDataForHomePage,
 } from "../controller/shop/s_login.js";
 const router = Route();
 
@@ -31,7 +33,23 @@ router.post("/memberRegister", member_register);
 router.post("/memberLogin", memberLogin);
 router.post("/joinProduct", insertJoinProductId);
 router.put("/unJoinProduct", UnJoinProduct);
-router.put("/updateProfileImage", uploadImage, memberUpdateImageProfile);
+//router.put("/updateProfileImage", uploadImage, memberUpdateImageProfile);
+router.put(
+  "/updateProfileImage",
+  upload.fields([
+    { name: "profileimage", maxCount: 1 },
+    { name: "walletqr", maxCount: 1 },
+  ]),
+  memberUpdateImageProfile,
+);
+router.put(
+  "/memberConfirmIdentity",
+  upload.fields([
+    { name: "peopleCarOrPassport", maxCount: 1 },
+    { name: "personalImage", maxCount: 3 },
+  ]),
+  memberConfirmIdentity,
+);
 router.get("/getLogsPayment", query_logs_adjust_and_payment);
 router.put("/memberRefill", uploadImage, member_refill_wallet);
 router.post("/withdraw", member_withdraw_credit);

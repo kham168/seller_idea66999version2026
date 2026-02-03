@@ -30,7 +30,7 @@ export const query_logs_adjust_and_payment = async (req, res) => {
     // Query logs
     const querySelect = `
       SELECT id, memberid, orderid, type, amount, confirmamount, creditb, 
-             creditf, status, account, imagepayment, userconfirm, cfcdate, cdate
+             creditf, status,resultdesc, account, imagepayment, userconfirm, cfcdate, cdate
       FROM public.tblogsmemberpayment
       WHERE memberid = $1
       ORDER BY cdate DESC
@@ -140,9 +140,9 @@ export const member_refill_wallet = async (req, res) => {
 };
 
 export const member_withdraw_credit = async (req, res) => {
-  const { id, amount, accountId } = req.body;
+  const { id, amount, accountType } = req.body;
 
-  if (!id || !amount || !accountId) {
+  if (!id || !amount || !accountType) {
     return res.status(400).send({
       status: false,
       message: "Missing required fields: id, amount, or accountId",
@@ -175,7 +175,7 @@ export const member_withdraw_credit = async (req, res) => {
       id,
       withdrawAmount,
       "pending",
-      accountId,
+      accountType,
     ]);
 
     if (!logInserted || logInserted.rowCount === 0) {
