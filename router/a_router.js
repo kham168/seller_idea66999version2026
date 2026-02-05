@@ -17,7 +17,7 @@ import {
   UpdateAdminStatus,queryAdminAll,updatePassword,updatePasswordConfirmByMail,getAllUserAC,memberUpdateBeLongToUser
 } from "../controller/admin/a_login.js";
 import {confirmSellStatus,confirmIncomeIntoMemberWallet} from "../controller/admin/a_order.js";
-import {insertData} from "../controller/admin/a_product.js";
+import {insertData,UpdateReviewNumberOfAnyProduct} from "../controller/admin/a_product.js";
 import {StaffConfirmPayForMemberPaymentAndWithdraw,insertACData,acUpdateData,queryACData,adminConfirmUserAccount,adminManualAddCreditToMember123} from "../controller/admin/a_payment.js";
 import { uploadImage } from "../middleware/product.uploadimage.js";
 //import { protect } from "../middleware/token.js"; insertOrderData
@@ -47,6 +47,7 @@ router.get("/getACData", queryACData);
 router.post("/updateACData", uploadImage, acUpdateData);
 router.put("/updateBeToUS", memberUpdateBeLongToUser);
 router.post("/confirmSellStatus", confirmSellStatus);
+router.put("/updateReviewNumber", UpdateReviewNumberOfAnyProduct);
 router.put("/updatePassword", updatePassword);
 router.put("/updatePasswordCFByMail", updatePasswordConfirmByMail);
 router.post("/confirmIncomeToMember", confirmIncomeIntoMemberWallet);

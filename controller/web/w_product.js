@@ -26,7 +26,7 @@ export const queryAll = async (req, res) => {
     // Fetch paginated data
     const dataQuery = `
       SELECT   id, modelname, type, price1, price2, size, 
-             productdetail, profitrate, image, star, totalsell, status, cdate
+             productdetail,reviewnumber, profitrate, image, star, totalsell, status, cdate
       FROM public.tbproduct 
       WHERE status='1' ORDER BY cdate DESC
       LIMIT $1 OFFSET $2;
@@ -110,7 +110,7 @@ export const queryOne = async (req, res) => {
     // Fetch paginated data
     const dataQuery = `
       SELECT  id, modelname, type, price1, price2, size, 
-      productdetail, profitrate, image, star, totalsell, status, cdate
+      productdetail,reviewnumber, profitrate, image, star, totalsell, status, cdate
       FROM public.tbproduct 
       WHERE id=$1
     `;
@@ -179,7 +179,7 @@ export const queryOne = async (req, res) => {
 
 // insert data  test  nw work lawm
 export const insertData = async (req, res) => {
-  const { name, type, price1, price2, size, productDetail, profitRate } =
+  const { name, type, price1, price2, size, productDetail,reviewNumber, profitRate } =
     req.body;
 
   // ✅ Validate required fields
@@ -203,9 +203,9 @@ export const insertData = async (req, res) => {
     // ✅ Insert into main table directly
     const query = `
     INSERT INTO public.tbproduct(
-	 id, modelname, type, price1, price2, size, productdetail, profitrate,
+	 id, modelname, type, price1, price2, size, productdetail,reviewnumber, profitrate,
     image, status, cdate)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '1', NOW())
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, '1', NOW())
       RETURNING *;
     `;
 
@@ -218,7 +218,7 @@ export const insertData = async (req, res) => {
       Array.isArray(size) ? JSON.stringify(size) : size, // ✅ fix here
       Array.isArray(productDetail)
         ? JSON.stringify(productDetail)
-        : productDetail,
+        : productDetail,reviewNumber,
       profitRate,
       imageArray,
     ];

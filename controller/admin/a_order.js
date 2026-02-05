@@ -623,10 +623,10 @@ export const queryAllMemberWhoBeLongToAdminId = async (req, res) => {
     const baseUrl = "http://localhost:1789/";
 
     const dataQuery = `
-    SELECT a.id, a.name, m.id, m.name, m.lastname, m.gender, 
+    SELECT a.id as staffid, a.name as staffname, m.id, m.name, m.shopname, m.gender, 
 m.gmail, m.country, 
-m.state, m.profileimage, m.accountname, m.bankaccount, 
-m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadmin, m.cdate
+m.state, m.profileimage,personalimage, m.accountname, m.bankaccount,walletqr,subscribe, star,
+m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status,statusdetail, m.becustofadmin, m.cdate
  FROM public.tbmember m inner join
  public.tbadminuser a on a.id=m.becustofadmin
  where a.id=$1 and m.status='1'
@@ -638,36 +638,32 @@ m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadm
 
     // ✅ Safely parse JSON columns and image list
     rows = rows.map((r) => {
-      const parseJSON = (val) => {
-        if (!val) return null;
-        try {
-          // handle cases: already object, JSON string, or quoted JSON string
-          if (typeof val === "object") return val;
-          if (typeof val === "string") {
-            const clean = val.replace(/^"|"$/g, "").replace(/\\"/g, '"');
-            return JSON.parse(clean);
+      const buildImage = (img) => {
+        if (!img) return null;
+
+        // Already array (future-proof)
+        if (Array.isArray(img)) {
+          return img.map((i) => baseUrl + i);
+        }
+
+        // JSON string array
+        if (typeof img === "string" && img.trim().startsWith("[")) {
+          try {
+            return JSON.parse(img).map((i) => baseUrl + i);
+          } catch {
+            return null;
           }
-        } catch {
-          return val;
         }
+
+        // Single string
+        return baseUrl + img;
       };
-
-      // ✅ Parse images into clean URLs
-      let profileImg = null;
-
-      if (r.profileimage) {
-        if (typeof r.profileimage === "string") {
-          const clean = r.profileimage
-            .replace(/[{}"]/g, "")
-            .split(",")[0]
-            ?.trim();
-          profileImg = clean ? baseUrl + clean : null;
-        }
-      }
 
       return {
         ...r,
-        profileimage: profileImg,
+        profileimage: buildImage(r.profileimage),
+        personalimage: buildImage(r.personalimage),
+        walletqr: buildImage(r.walletqr),
       };
     });
 
@@ -717,13 +713,13 @@ export const queryAllMemberActiveForSupperAdmin = async (req, res) => {
 
     // Fetch paginated data
     const dataQuery = `
-    SELECT a.id, a.name, m.id, m.name, m.lastname, m.gender, 
+    SELECT a.id as staffid, a.name as staffname, m.id, m.name, m.shopname, m.gender, 
 m.gmail, m.country, 
-m.state, m.profileimage, m.accountname, m.bankaccount, 
-m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadmin, m.cdate
+m.state, m.profileimage,m.peoplecarorpassport, m.personalimage, m.accountname, m.bankaccount, 
+m.walletqr,m.subscribe,m.star,m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status,m.statusdetail, m.becustofadmin, m.cdate
  FROM public.tbmember m left join
  public.tbadminuser a on a.id=m.becustofadmin
- where m.status='1' order by m.cdate desc
+ where m.status in('1','2') order by m.cdate desc
       LIMIT $1 OFFSET $2;
     `;
 
@@ -731,36 +727,33 @@ m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadm
 
     // ✅ Safely parse JSON columns and image list
     rows = rows.map((r) => {
-      const parseJSON = (val) => {
-        if (!val) return null;
-        try {
-          // handle cases: already object, JSON string, or quoted JSON string
-          if (typeof val === "object") return val;
-          if (typeof val === "string") {
-            const clean = val.replace(/^"|"$/g, "").replace(/\\"/g, '"');
-            return JSON.parse(clean);
+      const buildImage = (img) => {
+        if (!img) return null;
+
+        // Already array (future-proof)
+        if (Array.isArray(img)) {
+          return img.map((i) => baseUrl + i);
+        }
+
+        // JSON string array
+        if (typeof img === "string" && img.trim().startsWith("[")) {
+          try {
+            return JSON.parse(img).map((i) => baseUrl + i);
+          } catch {
+            return null;
           }
-        } catch {
-          return val;
         }
+
+        // Single string
+        return baseUrl + img;
       };
-
-      // ✅ Parse images into clean URLs
-      let profileImg = null;
-
-      if (r.profileimage) {
-        if (typeof r.profileimage === "string") {
-          const clean = r.profileimage
-            .replace(/[{}"]/g, "")
-            .split(",")[0]
-            ?.trim();
-          profileImg = clean ? baseUrl + clean : null;
-        }
-      }
 
       return {
         ...r,
-        profileimage: profileImg,
+        profileimage: buildImage(r.profileimage),
+        peoplecarorpassport: buildImage(r.peoplecarorpassport),
+        personalimage: buildImage(r.personalimage),
+        walletqr: buildImage(r.walletqr),
       };
     });
 

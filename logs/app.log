@@ -455,3 +455,51 @@ Params: 4,2200020002000
     
 
 Params: yjz94truj8,4,23,33,2000,220002000,2200020002000
+2026-02-05 16:36:51	Query: 
+    SELECT a.id, a.name, m.id, m.name, m.lastname, m.gender, 
+m.gmail, m.country, 
+m.state, m.profileimage, m.accountname, m.bankaccount, 
+m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadmin, m.cdate
+ FROM public.tbmember m left join
+ public.tbadminuser a on a.id=m.becustofadmin
+ where m.status='1' order by m.cdate desc
+      LIMIT $1 OFFSET $2;
+    
+
+Params: 15,0
+2026-02-05 16:37:03	Query: 
+    SELECT a.id, a.name, m.id, m.name, m.lastname, m.gender, 
+m.gmail, m.country, 
+m.state, m.profileimage, m.accountname, m.bankaccount, 
+m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadmin, m.cdate
+ FROM public.tbmember m left join
+ public.tbadminuser a on a.id=m.becustofadmin
+ where m.status='1' order by m.cdate desc
+      LIMIT $1 OFFSET $2;
+    
+
+Params: 15,0
+2026-02-05 16:38:19	Query: 
+    SELECT a.id, a.name, m.id, m.name, m.shop, m.gender, 
+m.gmail, m.country, 
+m.state, m.profileimage, m.accountname, m.bankaccount, 
+m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadmin, m.cdate
+ FROM public.tbmember m left join
+ public.tbadminuser a on a.id=m.becustofadmin
+ where m.status='1' order by m.cdate desc
+      LIMIT $1 OFFSET $2;
+    
+
+Params: 15,0
+2026-02-05 16:59:07	Query: 
+    SELECT a.id, a.name, m.id, m.name, m.lastname, m.gender, 
+m.gmail, m.country, 
+m.state, m.profileimage, m.accountname, m.bankaccount, 
+m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadmin, m.cdate
+ FROM public.tbmember m inner join
+ public.tbadminuser a on a.id=m.becustofadmin
+ where a.id=$1 and m.status='1'
+      LIMIT $2 OFFSET $3;
+    
+
+Params: 1,12,0

@@ -28,7 +28,7 @@ if (!id) {
   AND j.memberid = $1 and j.status='1'
    where p.status = '1' 
      group  by 
-	memberid,id,modelname,type,price1,price2,size,productdetail,profitrate,image,star,totalsell,p.status,p.cdate
+	memberid,id,modelname,type,price1,price2,size,productdetail,reviewnumber,profitrate,image,star,totalsell,p.status,p.cdate
      )s where s.memberid is not null;
     `;
     const countResult = await dbExecution(countQuery, [id]);
@@ -101,7 +101,7 @@ totalwithdrawal, status, statusdetail, becustofadmin, cdate
    where p.status = '1'
     )s where s.memberid is not null
   group  by 
-	memberid,id,modelname,type,price1,price2,size,productdetail,profitrate,image,star,totalsell,status,cdate
+	memberid,id,modelname,type,price1,price2,size,productdetail,reviewnumber,profitrate,image,star,totalsell,status,cdate
     order by cdate desc
       LIMIT $2 OFFSET $3;
     `;
@@ -201,7 +201,7 @@ export const queryAllProductWhichOneNoJoinWithId = async (req, res) => {
   AND j.memberid = $1
 	where p.status = '1' and p.cdate <= current_date -1
      group  by 
-	memberid,id,modelname,type,price1,price2,size,productdetail,profitrate,image,star,totalsell,p.status,p.cdate
+	memberid,id,modelname,type,price1,price2,size,productdetail,reviewnumber,profitrate,image,star,totalsell,p.status,p.cdate
      )s where s.memberid is null;
     `;
     const countResult = await dbExecution(countQuery, [id]);
@@ -220,7 +220,7 @@ export const queryAllProductWhichOneNoJoinWithId = async (req, res) => {
 	where p.status = '1' and p.cdate <= current_date -1
     )s where s.memberid is null 
     group  by 
-	memberid,id,modelname,type,price1,price2,size,productdetail,profitrate,image,star,totalsell,status,cdate
+	memberid,id,modelname,type,price1,price2,size,productdetail,reviewnumber,profitrate,image,star,totalsell,status,cdate
     LIMIT $2 OFFSET $3;
     `;
 
@@ -315,7 +315,7 @@ export const queryAllProductWhichOneNoJoinWithIdNewData = async (req, res) => {
   AND j.memberid = $1
 	where p.status = '1' and p.cdate >= current_date -1
      group  by 
-	memberid,id,modelname,type,price1,price2,size,productdetail,profitrate,image,star,totalsell,p.status,p.cdate
+	memberid,id,modelname,type,price1,price2,size,productdetail,reviewnumber,profitrate,image,star,totalsell,p.status,p.cdate
     )s where s.memberid is null;
     `;
     const countResult = await dbExecution(countQuery, [id]);
@@ -334,7 +334,7 @@ export const queryAllProductWhichOneNoJoinWithIdNewData = async (req, res) => {
 	where p.status = '1' and p.cdate >= current_date -1
     )s where s.memberid is null 
     group by 
-	memberid,id,modelname,type,price1,price2,size,productdetail,profitrate,image,star,totalsell,status,cdate
+	memberid,id,modelname,type,price1,price2,size,productdetail,reviewnumber,profitrate,image,star,totalsell,status,cdate
 	
     LIMIT $2 OFFSET $3;
     `;

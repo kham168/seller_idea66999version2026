@@ -269,9 +269,20 @@ export const queryMemberData = async (req, res) => {
     const memberData = selectResult.rows.map((row) => {
       const buildUrl = (img) => {
         if (!img) return null;
-        return Array.isArray(img)
-          ? img.map((i) => `${baseUrl}${i}`)
-          : `${baseUrl}${img}`;
+
+        if (Array.isArray(img)) {
+          return img.map((i) => `${baseUrl}${i}`);
+        }
+
+        if (typeof img === "string" && img.trim().startsWith("[")) {
+          try {
+            return JSON.parse(img).map((i) => `${baseUrl}${i}`);
+          } catch {
+            return null;
+          }
+        }
+
+        return `${baseUrl}${img}`;
       };
 
       return {
@@ -403,6 +414,11 @@ export const memberUpdateImageProfile = async (req, res) => {
 
     // ✅ Get uploaded files from separate fields
     const profileImageFile = req.files?.profileimage?.[0]?.filename || null;
+    const peopleCarOrPassport =
+      req.files?.peopleCarOrPassport?.[0]?.filename || null;
+    const personalImageArray = req.files?.personalImage
+      ? req.files.personalImage.map((file) => file.filename)
+      : [];
     const walletQrFile = req.files?.walletqr?.[0]?.filename || null;
 
     if (profileImageFile) {
@@ -410,6 +426,15 @@ export const memberUpdateImageProfile = async (req, res) => {
       values.push(profileImageFile);
     }
 
+    if (peopleCarOrPassport) {
+      updates.push(`peoplecarorpassport = $${paramIndex++}`);
+      values.push(peopleCarOrPassport);
+    }
+
+    if (personalImageArray.length > 0) {
+      updates.push(`personalimage = $${paramIndex++}`);
+      values.push(JSON.stringify(personalImageArray)); // store as JSON
+    }
     if (walletQrFile) {
       updates.push(`walletqr = $${paramIndex++}`);
       values.push(walletQrFile);
@@ -447,7 +472,7 @@ export const memberUpdateImageProfile = async (req, res) => {
       UPDATE public.tbmember
       SET ${updates.join(", ")}
       WHERE id = $1
-      RETURNING profileimage, walletqr, name, shopname, accountname, bankaccount;
+      RETURNING profileimage,peoplecarorpassport,personalimage, walletqr, name, shopname, accountname, bankaccount;
     `;
 
     const result = await dbExecution(query, [id, ...values]);
@@ -595,10 +620,15 @@ export const getDataForHomePage = async (req, res) => {
       profile = {
         ...p,
         profileimage: p.profileimage ? baseUrl + p.profileimage : null,
+
         peoplecarorpassport: p.peoplecarorpassport
           ? baseUrl + p.peoplecarorpassport
           : null,
-        personalimage: p.personalimage ? baseUrl + p.personalimage : null,
+
+        personalimage: p.personalimage
+          ? JSON.parse(p.personalimage).map((img) => baseUrl + img)
+          : [],
+
         walletqr: p.walletqr ? baseUrl + p.walletqr : null,
       };
     }
