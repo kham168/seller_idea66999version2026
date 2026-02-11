@@ -33,7 +33,7 @@ router.put("/adminUpdateOrderToTrue", UpdateOrderListStatus);
 router.get("/getProductByMemberID", queryAllProductByMemberId);
 router.get("/getMemberListByAdminId", queryAllMemberWhoBeLongToAdminId);
 router.get("/getMemberListForSupperAdmin", queryAllMemberActiveForSupperAdmin);
-router.get("/getMemberStatusIsTwoForSupperAdmin", queryAllMemberStatusIs2And0ForSupperAdmin);
+router.get("/getMemberStatusIs2And0ForSupperAdmin", queryAllMemberStatusIs2And0ForSupperAdmin);
 router.get("/getMemberUnActiveForSupperAdmin", queryAllMemberUnActiveForSupperAdmin);
 router.put("/updateOrderToFalse", normal_update_order_list_into_to_failed);
 router.post("/adminUpdatePayment", StaffConfirmPayForMemberPaymentAndWithdraw);
