@@ -11,7 +11,7 @@ export const adminConfirmUserAccount = async (req, res) => {
     });
   }
 
-  if (status == "0" && !statusDetail) {
+  if (status == "2" && !statusDetail) {
     return res.status(400).send({
       status: false,
       message: "Missing statusDetail is null",
@@ -23,8 +23,12 @@ export const adminConfirmUserAccount = async (req, res) => {
     statusDetail = "";
   }
 
-  if (status == "0") {
-    status = "2";
+  if (status == "0" && !statusDetail) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing statusDetail is null",
+      data: [],
+    });
   }
 
   try {
