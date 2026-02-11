@@ -11,6 +11,22 @@ export const adminConfirmUserAccount = async (req, res) => {
     });
   }
 
+  if (status == "0" && !statusDetail) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing statusDetail is null",
+      data: [],
+    });
+  }
+
+  if (status == "1") {
+    statusDetail = "";
+  }
+
+  if (status == "0") {
+    status = "2";
+  }
+
   try {
     const updateMemberData = `
       UPDATE public.tbmember

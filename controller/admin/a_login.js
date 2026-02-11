@@ -611,7 +611,7 @@ export const queryAdminAll = async (req, res) => {
 };
 
 export const memberUpdateBeLongToUser = async (req, res) => {
-  const { id, type, status, uId } = req.body;
+  const { id, type, status, uId, detail } = req.body;
 
   if (!id) {
     return res.status(400).send({
@@ -637,15 +637,27 @@ export const memberUpdateBeLongToUser = async (req, res) => {
     });
   }
 
+  if (status === "0" && !detail) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing detail is null",
+      data: [],
+    });
+  }
+
+  if (status == "1") {
+    detail = "";
+  }
+
   try {
     const query = `
       UPDATE public.tbmember
-      SET  status=$2, becustofadmin = $3
+      SET  status=$2, becustofadmin = $3, statusdetail = $4
       WHERE id = $1
       RETURNING id, status, becustofadmin;
     `;
 
-    const result = await dbExecution(query, [id, status, uId]);
+    const result = await dbExecution(query, [id, status, uId, detail]);
 
     if (result.rowCount === 0) {
       return res.status(404).send({
