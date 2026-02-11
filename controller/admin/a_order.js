@@ -719,7 +719,188 @@ m.state, m.profileimage,m.peoplecarorpassport, m.personalimage, m.accountname, m
 m.walletqr,m.subscribe,m.star,m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status,m.statusdetail, m.becustofadmin, m.cdate
  FROM public.tbmember m left join
  public.tbadminuser a on a.id=m.becustofadmin
- where m.status in('1','2') order by m.cdate desc
+ where m.status='1' order by m.cdate desc
+      LIMIT $1 OFFSET $2;
+    `;
+
+    let rows = (await dbExecution(dataQuery, [validLimit, offset]))?.rows || [];
+
+    // ✅ Safely parse JSON columns and image list
+    rows = rows.map((r) => {
+      const buildImage = (img) => {
+        if (!img) return null;
+
+        // Already array (future-proof)
+        if (Array.isArray(img)) {
+          return img.map((i) => baseUrl + i);
+        }
+
+        // JSON string array
+        if (typeof img === "string" && img.trim().startsWith("[")) {
+          try {
+            return JSON.parse(img).map((i) => baseUrl + i);
+          } catch {
+            return null;
+          }
+        }
+
+        // Single string
+        return baseUrl + img;
+      };
+
+      return {
+        ...r,
+        profileimage: buildImage(r.profileimage),
+        peoplecarorpassport: buildImage(r.peoplecarorpassport),
+        personalimage: buildImage(r.personalimage),
+        walletqr: buildImage(r.walletqr),
+      };
+    });
+
+    // ✅ Response
+    res.status(200).send({
+      status: true,
+      message: rows.length > 0 ? "Query successful" : "No data found",
+      data: rows,
+      pagination: {
+        page: validPage,
+        limit: validLimit,
+        total,
+        totalPages: Math.ceil(total / validLimit),
+      },
+    });
+  } catch (error) {
+    console.error("Error in queryaAll:", error);
+    res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      data: [],
+      error: error.message,
+    });
+  }
+};
+
+
+export const queryAllMemberStatusIsTwoForSupperAdmin = async (req, res) => {
+  try {
+    const page = req.query.page ?? 0;
+    const limit = req.query.limit ?? 15;
+
+    const validPage = Math.max(parseInt(page, 10) || 0, 0);
+    const validLimit = Math.max(parseInt(limit, 10) || 15, 1);
+    const offset = validPage * validLimit;
+
+    // Count total
+    const countQuery = `
+    SELECT count(*) AS total
+ FROM public.tbmember m inner join
+ public.tbadminuser a on a.id=m.becustofadmin
+ where m.status='2';
+    `;
+    const countResult = await dbExecution(countQuery, []);
+    const total = parseInt(countResult.rows[0]?.total || 0, 10);
+
+    const baseUrl = "http://localhost:1789/";
+
+    // Fetch paginated data
+    const dataQuery = `
+    SELECT a.id as staffid, a.name as staffname, m.id, m.name, m.shopname, m.gender, 
+m.gmail, m.country, 
+m.state, m.profileimage,m.peoplecarorpassport, m.personalimage, m.accountname, m.bankaccount, 
+m.walletqr,m.subscribe,m.star,m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status,m.statusdetail, m.becustofadmin, m.cdate
+ FROM public.tbmember m left join
+ public.tbadminuser a on a.id=m.becustofadmin
+ where m.status='2' order by m.cdate desc
+      LIMIT $1 OFFSET $2;
+    `;
+
+    let rows = (await dbExecution(dataQuery, [validLimit, offset]))?.rows || [];
+
+    // ✅ Safely parse JSON columns and image list
+    rows = rows.map((r) => {
+      const buildImage = (img) => {
+        if (!img) return null;
+
+        // Already array (future-proof)
+        if (Array.isArray(img)) {
+          return img.map((i) => baseUrl + i);
+        }
+
+        // JSON string array
+        if (typeof img === "string" && img.trim().startsWith("[")) {
+          try {
+            return JSON.parse(img).map((i) => baseUrl + i);
+          } catch {
+            return null;
+          }
+        }
+
+        // Single string
+        return baseUrl + img;
+      };
+
+      return {
+        ...r,
+        profileimage: buildImage(r.profileimage),
+        peoplecarorpassport: buildImage(r.peoplecarorpassport),
+        personalimage: buildImage(r.personalimage),
+        walletqr: buildImage(r.walletqr),
+      };
+    });
+
+    // ✅ Response
+    res.status(200).send({
+      status: true,
+      message: rows.length > 0 ? "Query successful" : "No data found",
+      data: rows,
+      pagination: {
+        page: validPage,
+        limit: validLimit,
+        total,
+        totalPages: Math.ceil(total / validLimit),
+      },
+    });
+  } catch (error) {
+    console.error("Error in queryaAll:", error);
+    res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      data: [],
+      error: error.message,
+    });
+  }
+};
+
+export const queryAllMemberUnActiveForSupperAdmin = async (req, res) => {
+  try {
+    const page = req.query.page ?? 0;
+    const limit = req.query.limit ?? 15;
+
+    const validPage = Math.max(parseInt(page, 10) || 0, 0);
+    const validLimit = Math.max(parseInt(limit, 10) || 15, 1);
+    const offset = validPage * validLimit;
+
+    // Count total
+    const countQuery = `
+    SELECT count(*) AS total
+ FROM public.tbmember m inner join
+ public.tbadminuser a on a.id=m.becustofadmin
+ where m.status='0';
+    `;
+    const countResult = await dbExecution(countQuery, []);
+    const total = parseInt(countResult.rows[0]?.total || 0, 10);
+
+    const baseUrl = "http://localhost:1789/";
+
+    // Fetch paginated data
+    const dataQuery = `
+    SELECT a.id as staffid, a.name as staffname, m.id, m.name, m.shopname, m.gender, 
+m.gmail, m.country, 
+m.state, m.profileimage,m.peoplecarorpassport, m.personalimage, m.accountname, m.bankaccount, 
+m.walletqr,m.subscribe,m.star,m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status,m.statusdetail, m.becustofadmin, m.cdate
+ FROM public.tbmember m left join
+ public.tbadminuser a on a.id=m.becustofadmin
+ where m.status='0' order by m.cdate desc
       LIMIT $1 OFFSET $2;
     `;
 

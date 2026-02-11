@@ -610,7 +610,6 @@ export const queryAdminAll = async (req, res) => {
   }
 };
 
-
 export const memberUpdateBeLongToUser = async (req, res) => {
   const { id, type, status, uId } = req.body;
 
