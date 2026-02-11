@@ -7,7 +7,7 @@ import {
   UpdateOrderListStatus,
   queryAllProductByMemberId,
   queryAllMemberWhoBeLongToAdminId,
-  queryAllMemberActiveForSupperAdmin,queryAllMemberStatusIsTwoForSupperAdmin,queryAllMemberUnActiveForSupperAdmin,
+  queryAllMemberActiveForSupperAdmin,queryAllMemberStatusIs2And0ForSupperAdmin,queryAllMemberUnActiveForSupperAdmin,
   normal_update_order_list_into_to_failed,
 } from "../controller/admin/a_order.js";
 import {
@@ -33,7 +33,7 @@ router.put("/adminUpdateOrderToTrue", UpdateOrderListStatus);
 router.get("/getProductByMemberID", queryAllProductByMemberId);
 router.get("/getMemberListByAdminId", queryAllMemberWhoBeLongToAdminId);
 router.get("/getMemberListForSupperAdmin", queryAllMemberActiveForSupperAdmin);
-router.get("/getMemberStatusIsTwoForSupperAdmin", queryAllMemberStatusIsTwoForSupperAdmin);
+router.get("/getMemberStatusIsTwoForSupperAdmin", queryAllMemberStatusIs2And0ForSupperAdmin);
 router.get("/getMemberUnActiveForSupperAdmin", queryAllMemberUnActiveForSupperAdmin);
 router.put("/updateOrderToFalse", normal_update_order_list_into_to_failed);
 router.post("/adminUpdatePayment", StaffConfirmPayForMemberPaymentAndWithdraw);

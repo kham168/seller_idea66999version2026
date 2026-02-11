@@ -780,8 +780,7 @@ m.walletqr,m.subscribe,m.star,m.wallet, m.totalsell, m.totalincome, m.totalwithd
   }
 };
 
-
-export const queryAllMemberStatusIsTwoForSupperAdmin = async (req, res) => {
+export const queryAllMemberStatusIs2And0ForSupperAdmin = async (req, res) => {
   try {
     const page = req.query.page ?? 0;
     const limit = req.query.limit ?? 15;
@@ -795,7 +794,7 @@ export const queryAllMemberStatusIsTwoForSupperAdmin = async (req, res) => {
     SELECT count(*) AS total
  FROM public.tbmember m inner join
  public.tbadminuser a on a.id=m.becustofadmin
- where m.status='2';
+ where m.status in ('2','0');
     `;
     const countResult = await dbExecution(countQuery, []);
     const total = parseInt(countResult.rows[0]?.total || 0, 10);
@@ -810,7 +809,7 @@ m.state, m.profileimage,m.peoplecarorpassport, m.personalimage, m.accountname, m
 m.walletqr,m.subscribe,m.star,m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status,m.statusdetail, m.becustofadmin, m.cdate
  FROM public.tbmember m left join
  public.tbadminuser a on a.id=m.becustofadmin
- where m.status='2' order by m.cdate desc
+ where m.status in('2','0') order by m.cdate desc
       LIMIT $1 OFFSET $2;
     `;
 
