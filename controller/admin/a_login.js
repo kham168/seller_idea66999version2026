@@ -611,7 +611,19 @@ export const queryAdminAll = async (req, res) => {
 };
 
 export const memberUpdateBeLongToUser = async (req, res) => {
-  const { id, type, status, uId, statusDetail } = req.body;
+  const { id, status, uId } = req.body;
+  let { statusDetail } = req.body;
+
+  // 🔐 Get role from middleware (NOT from req.body)
+  const { role } = req.user;
+
+  if (role !== "admin") {
+    return res.status(403).send({
+      status: false,
+      message: "Access denied",
+      data: [],
+    });
+  }
 
   if (!id) {
     return res.status(400).send({
@@ -621,7 +633,7 @@ export const memberUpdateBeLongToUser = async (req, res) => {
     });
   }
 
-  if (!status && !uId) {
+  if (!status || !uId) {
     return res.status(400).send({
       status: false,
       message: "Missing status or uId",
@@ -629,37 +641,36 @@ export const memberUpdateBeLongToUser = async (req, res) => {
     });
   }
 
-  if (type !== "admin") {
-    return res.status(403).send({
-      status: false,
-      message: "Access denied",
-      data: [],
-    });
-  }
-
   if (status === "0" && !statusDetail) {
     return res.status(400).send({
       status: false,
-      message: "Missing detail is null",
+      message: "Missing status detail",
       data: [],
     });
   }
 
-  if (status == "1") {
-    statusDetail = "";
+  if (status === "1") {
+    statusDetail = null;
   }
 
   try {
     const query = `
       UPDATE public.tbmember
-      SET  status=$2, becustofadmin = $3, statusdetail = $4
+      SET status = $2,
+          becustofadmin = $3,
+          statusdetail = $4
       WHERE id = $1
       RETURNING id, status, becustofadmin, statusdetail;
     `;
 
-    const result = await dbExecution(query, [id, status, uId, statusDetail]);
+    const result = await dbExecution(query, [
+      id,
+      status,
+      uId,
+      statusDetail ?? null,
+    ]);
 
-    if (result.rowCount === 0) {
+    if (!result || result.rowCount === 0) {
       return res.status(404).send({
         status: false,
         message: "Member not found",
@@ -672,6 +683,7 @@ export const memberUpdateBeLongToUser = async (req, res) => {
       message: "Updated successfully",
       data: result.rows[0],
     });
+
   } catch (error) {
     console.error("Error in memberUpdateBeLongToUser:", error);
     return res.status(500).send({

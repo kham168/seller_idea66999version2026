@@ -1,7 +1,8 @@
 import { dbExecution } from "../../dbconfig/dbconfig.js";
 
 export const adminConfirmUserAccount = async (req, res) => {
-  const { id, status, statusDetail } = req.body;
+  const { id, status } = req.body;
+  let { statusDetail } = req.body; // ✅ change to let
 
   if (!id || !status) {
     return res.status(400).send({
@@ -45,7 +46,6 @@ export const adminConfirmUserAccount = async (req, res) => {
       statusDetail || null,
     ]);
 
-    // ❗ No row updated
     if (!memberUpdated || memberUpdated.rowCount === 0) {
       return res.status(404).send({
         status: false,

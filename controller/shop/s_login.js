@@ -75,7 +75,7 @@ export const memberLogin = async (req, res) => {
     const adminQuery = `
       SELECT id, name,'' as shopname, usertype, gmail, password_hash as password
       FROM public.tbadminuser
-      WHERE gmail = $1 AND status in('2','1');
+      WHERE gmail = $1 AND status='1';
     `;
 
     const adminResult = await dbExecution(adminQuery, [gmail]);
