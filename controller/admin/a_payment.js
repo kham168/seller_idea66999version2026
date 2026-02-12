@@ -34,10 +34,8 @@ export const adminConfirmUserAccount = async (req, res) => {
   try {
     const updateMemberData = `
       UPDATE public.tbmember
-      SET status = $2,
-          statusdetail = $3
-      WHERE id = $1
-        AND status = '2'
+      SET status = $2, statusdetail = $3
+      WHERE id = $1 AND status = '2'
       RETURNING id, status, statusdetail;
     `;
 

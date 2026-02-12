@@ -34,7 +34,7 @@ router.get(
   queryAllProductWhichOneNoJoinWithIdNewData,
 );
 router.get("/getMemberData", verifyJWT, queryMemberData);
-router.post("/memberRegister", verifyJWT, member_register);
+router.post("/memberRegister", member_register);
 router.post("/memberLogin", memberLogin);   ////.      here MOUA
 router.post("/joinProduct", verifyJWT, insertJoinProductId);
 router.put("/unJoinProduct", verifyJWT, UnJoinProduct);

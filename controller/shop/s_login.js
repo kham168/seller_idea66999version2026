@@ -1,6 +1,6 @@
 import { dbExecution } from "../../dbconfig/dbconfig.js";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";  
+import bcrypt from "bcrypt";
 import { generateAccessToken } from "../../middleware/jwt.js";
 
 import { stat } from "fs";
