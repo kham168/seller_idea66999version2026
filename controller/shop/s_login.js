@@ -363,9 +363,9 @@ export const member_register = async (req, res) => {
     const insertQuery = `
       INSERT INTO public.tbmember(
         id, name, shopname, gender, gmail, password, country, 
-        wallet, status, cdate
+        wallet, status,statusdetail, cdate
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, '0', '2', NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, $7, '0', '2','Your branch is waiting for approval.', NOW())
       RETURNING *;
     `;
 

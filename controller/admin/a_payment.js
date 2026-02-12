@@ -20,7 +20,7 @@ export const adminConfirmUserAccount = async (req, res) => {
   }
 
   if (status == "1") {
-    statusDetail = "";
+    statusDetail = "Your branch is approved.";
   }
 
   if (status == "0" && !statusDetail) {
