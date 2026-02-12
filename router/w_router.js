@@ -1,23 +1,21 @@
 import Route from "express";
-//import { verifyJWT } from "../../middleware/jwt.js";
-import {
-  queryAll,
-  queryOne,
-  insertData,
-} from "../controller/web/w_product.js";
+import { verifyJWT } from "../middleware/auth.js";
+import { queryAll, queryOne, insertData } from "../controller/web/w_product.js";
 import {
   queryOrderDataAll,
-  queryOrderDataOne,queryOrderDataAllByMemberId,CountStatusPending
-} from "../controller/web/w_order.js"; 
+  queryOrderDataOne,
+  queryOrderDataAllByMemberId,
+  CountStatusPending,
+} from "../controller/web/w_order.js";
 import { uploadImage } from "../middleware/product.uploadimage.js";
 const route = Route();
 
-route.get("/selectProductList", queryAll);
-route.get("/selectProductId", queryOne);
-route.post("/insertProductList", uploadImage, insertData);
-route.get("/selectOrderList", queryOrderDataAll);
-route.get("/selectOrderById", queryOrderDataOne);
-route.get("/selectOrderByMemberId", queryOrderDataAllByMemberId);
-route.get("/selectStatusPendingByMemberId", CountStatusPending); 
+route.get("/selectProductList", verifyJWT, queryAll);
+route.get("/selectProductId", verifyJWT, queryOne);
+route.post("/insertProductList", verifyJWT, uploadImage, insertData);
+route.get("/selectOrderList", verifyJWT, queryOrderDataAll);
+route.get("/selectOrderById", verifyJWT, queryOrderDataOne);
+route.get("/selectOrderByMemberId", verifyJWT, queryOrderDataAllByMemberId);
+route.get("/selectStatusPendingByMemberId", verifyJWT, CountStatusPending);
 
 export default route;

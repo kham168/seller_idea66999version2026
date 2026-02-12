@@ -1,6 +1,8 @@
 import { dbExecution } from "../../dbconfig/dbconfig.js";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+import bcrypt from "bcrypt";  
+import { generateAccessToken } from "../../middleware/jwt.js";
+
 import { stat } from "fs";
 
 ///===== login =====
@@ -126,6 +128,7 @@ export const memberLogin = async (req, res) => {
       data: {
         ...user,
         role: userType,
+        token: generateAccessToken({ id: user.id, role: userType }),
       },
     });
   } catch (error) {

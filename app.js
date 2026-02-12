@@ -84,8 +84,8 @@ io.on("connection", (socket) => {
 
   // handle message sending
   socket.on("send_message", async (payload, ack) => {
-   // console.log("==========================");
-   // console.log(payload);
+    // console.log("==========================");
+    // console.log(payload);
     try {
       const { conversationId, body, type = "text", attachments = [] } = payload;
 
@@ -145,10 +145,22 @@ io.on("connection", (socket) => {
 
 //////////===============End of chat message=======
 
-const APPPORT = Number(process.env.APPPORT) || 1789;
+// Normalize and validate port from env, fallback to 1789 when missing/invalid
+const APPPORT = Number(process.env.APPPORT);
 // app.listen(APPPORT, () => {
 //   console.log(`App is running on port ${APPPORT}`);
 // });
+// Handle listen errors (e.g., port already in use) with a friendly message
+server.on("error", (err) => {
+  if (err && err.code === "EADDRINUSE") {
+    console.error(
+      `❌ Port ${APPPORT} is already in use. Either stop the process using that port or set a different port via the APPPORT environment variable.`,
+    );
+    process.exit(1);
+  }
+  console.error("Server error:", err);
+  process.exit(1);
+});
 server.listen(APPPORT, () => {
   console.log(`🚀 Server + Socket.IO running on port ${APPPORT}`);
 });

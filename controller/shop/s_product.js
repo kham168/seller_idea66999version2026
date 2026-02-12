@@ -48,7 +48,7 @@ country, state, profileimage, peoplecarorpassport,
 personalimage, accountname, bankaccount, walletqr, 
 subscribe, star, wallet, totalsell, totalincome, 
 totalwithdrawal, status, statusdetail, becustofadmin, cdate
-      FROM public.tbmember WHERE id = $1 AND status = '1' limit 1;
+      FROM public.tbmember WHERE id = $1 AND status in('1','2') limit 1;
     `;
 
         const profile = await dbExecution(querySelect, [id]);

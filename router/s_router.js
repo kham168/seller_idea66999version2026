@@ -1,6 +1,6 @@
 import Route from "express";
-// fixed import path: middleware is one level up from `router`
-//import { verifyJWT } from "../middleware/jwt.js";
+import { verifyJWT } from "../middleware/auth.js";
+
 import {
   query_logs_adjust_and_payment,
   member_refill_wallet,
@@ -19,20 +19,25 @@ import {
   queryMemberData,
   memberLogin,
   member_register,
-  memberUpdateImageProfile,memberConfirmIdentity,
+  memberUpdateImageProfile,
+  memberConfirmIdentity,
   getDataForHomePage,
 } from "../controller/shop/s_login.js";
 const router = Route();
 
-router.get("/getProductList", queryAllProductByMemberId);
-router.get("/toJoinProduct", queryAllProductWhichOneNoJoinWithId);
-router.get("/getDataForHomePage", getDataForHomePage);
-router.get("/toJoinProductNew", queryAllProductWhichOneNoJoinWithIdNewData);
-router.get("/getMemberData", queryMemberData);
-router.post("/memberRegister", member_register);
-router.post("/memberLogin", memberLogin);
-router.post("/joinProduct", insertJoinProductId);
-router.put("/unJoinProduct", UnJoinProduct);
+router.get("/getProductList", verifyJWT, queryAllProductByMemberId);
+router.get("/toJoinProduct", verifyJWT, queryAllProductWhichOneNoJoinWithId);
+router.get("/getDataForHomePage", verifyJWT, getDataForHomePage);
+router.get(
+  "/toJoinProductNew",
+  verifyJWT,
+  queryAllProductWhichOneNoJoinWithIdNewData,
+);
+router.get("/getMemberData", verifyJWT, queryMemberData);
+router.post("/memberRegister", verifyJWT, member_register);
+router.post("/memberLogin", memberLogin);   ////.      here MOUA
+router.post("/joinProduct", verifyJWT, insertJoinProductId);
+router.put("/unJoinProduct", verifyJWT, UnJoinProduct);
 //router.put("/updateProfileImage", uploadImage, memberUpdateImageProfile);
 router.put(
   "/updateProfileImage",
@@ -40,8 +45,8 @@ router.put(
     { name: "profileimage", maxCount: 1 },
     { name: "peopleCarOrPassport", maxCount: 1 },
     { name: "personalImage", maxCount: 3 },
-    { name: "walletQr", maxCount: 1 }
-  ]),
+    { name: "walletQr", maxCount: 1 },
+  ]),verifyJWT,
   memberUpdateImageProfile,
 );
 router.put(
@@ -49,11 +54,11 @@ router.put(
   upload.fields([
     { name: "peopleCarOrPassport", maxCount: 1 },
     { name: "personalImage", maxCount: 3 },
-  ]),
+  ]),verifyJWT,
   memberConfirmIdentity,
 );
-router.get("/getLogsPayment", query_logs_adjust_and_payment);
-router.put("/memberRefill", uploadImage, member_refill_wallet);
-router.post("/withdraw", member_withdraw_credit);
+router.get("/getLogsPayment",verifyJWT, query_logs_adjust_and_payment);
+router.put("/memberRefill",verifyJWT, uploadImage, member_refill_wallet);
+router.post("/withdraw",verifyJWT, member_withdraw_credit);
 
 export default router;

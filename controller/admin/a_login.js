@@ -611,7 +611,7 @@ export const queryAdminAll = async (req, res) => {
 };
 
 export const memberUpdateBeLongToUser = async (req, res) => {
-  const { id, type, status, uId, detail } = req.body;
+  const { id, type, status, uId, statusDetail } = req.body;
 
   if (!id) {
     return res.status(400).send({
@@ -637,7 +637,7 @@ export const memberUpdateBeLongToUser = async (req, res) => {
     });
   }
 
-  if (status === "0" && !detail) {
+  if (status === "0" && !statusDetail) {
     return res.status(400).send({
       status: false,
       message: "Missing detail is null",
@@ -646,7 +646,7 @@ export const memberUpdateBeLongToUser = async (req, res) => {
   }
 
   if (status == "1") {
-    detail = "";
+    statusDetail = "";
   }
 
   try {
@@ -657,7 +657,7 @@ export const memberUpdateBeLongToUser = async (req, res) => {
       RETURNING id, status, becustofadmin;
     `;
 
-    const result = await dbExecution(query, [id, status, uId, detail]);
+    const result = await dbExecution(query, [id, status, uId, statusDetail]);
 
     if (result.rowCount === 0) {
       return res.status(404).send({
