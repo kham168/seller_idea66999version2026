@@ -654,7 +654,7 @@ export const memberUpdateBeLongToUser = async (req, res) => {
       UPDATE public.tbmember
       SET  status=$2, becustofadmin = $3, statusdetail = $4
       WHERE id = $1
-      RETURNING id, status, becustofadmin;
+      RETURNING id, status, becustofadmin, statusdetail;
     `;
 
     const result = await dbExecution(query, [id, status, uId, statusDetail]);
