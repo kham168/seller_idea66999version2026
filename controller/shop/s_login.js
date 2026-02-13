@@ -422,7 +422,14 @@ export const memberUpdateImageProfile = async (req, res) => {
     const personalImageArray = req.files?.personalImage
       ? req.files.personalImage.map((file) => file.filename)
       : [];
-    const walletQrFile = req.files?.walletqr?.[0]?.filename || null;
+    const walletQrFile = req.files?.walletQr?.[0]?.filename || null;
+
+
+//  { name: "profileimage", maxCount: 1 },
+//     { name: "peopleCarOrPassport", maxCount: 1 },
+//     { name: "personalImage", maxCount: 3 },
+//     { name: "walletQr", maxCount: 1 },
+ 
 
     if (profileImageFile) {
       updates.push(`profileimage = $${paramIndex++}`);
