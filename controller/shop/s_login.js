@@ -73,7 +73,7 @@ export const memberLogin = async (req, res) => {
 
     // 1️⃣ Try ADMIN login first
     const adminQuery = `
-      SELECT id, name,'' as shopname, usertype, gmail, password_hash as password
+      SELECT id, name,'' as shopname, usertype, gmail,'' as becustofadmin, password_hash as password
       FROM public.tbadminuser
       WHERE gmail = $1 AND status='1';
     `;
@@ -86,7 +86,7 @@ export const memberLogin = async (req, res) => {
     } else {
       // 2️⃣ If not admin → try MEMBER
       const memberQuery = `
-        SELECT id, name, shopname, 'shop' as usertype, gmail, password
+        SELECT id, name, shopname, 'shop' as usertype, gmail,becustofadmin, password
         FROM public.tbmember
         WHERE gmail = $1 AND status in('2','1');
       `;
@@ -363,9 +363,8 @@ export const member_register = async (req, res) => {
     const insertQuery = `
       INSERT INTO public.tbmember(
         id, name, shopname, gender, gmail, password, country, 
-        wallet, status,statusdetail, cdate
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, '0', '2','Your branch is waiting for approval.', NOW())
+        wallet, status,statusdetail,becustofadmin, cdate
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, '0', '2','Your branch is waiting for approval.','23', NOW())
       RETURNING *;
     `;
 

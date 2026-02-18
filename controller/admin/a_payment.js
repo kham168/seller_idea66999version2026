@@ -441,9 +441,8 @@ export const acUpdateData = async (req, res) => {
       updates.push(`actype = $${paramIndex++}`);
       values.push(type);
     }
-
-    // ✅ allow status = '0' or '1'
-    if (status !== undefined) {
+ 
+    if (status) {
       updates.push(`status = $${paramIndex++}`);
       values.push(status);
     }

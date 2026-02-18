@@ -609,21 +609,9 @@ export const queryAdminAll = async (req, res) => {
     });
   }
 };
-
 export const memberUpdateBeLongToUser = async (req, res) => {
-  const { id, status, uId } = req.body;
+  const { id, status, uId, star } = req.body;
   let { statusDetail } = req.body;
-
-  // 🔐 Get role from middleware (NOT from req.body)
-  const { role } = req.user;
-
-  if (role !== "admin") {
-    return res.status(403).send({
-      status: false,
-      message: "Access denied",
-      data: [],
-    });
-  }
 
   if (!id) {
     return res.status(400).send({
@@ -633,42 +621,65 @@ export const memberUpdateBeLongToUser = async (req, res) => {
     });
   }
 
-  if (!status || !uId) {
-    return res.status(400).send({
-      status: false,
-      message: "Missing status or uId",
-      data: [],
-    });
-  }
+  // 🔧 Business logic only when status is provided
+  if (status !== undefined && status !== "") {
+    if (status === "0" && (!statusDetail || statusDetail === "")) {
+      return res.status(400).send({
+        status: false,
+        message: "Missing status detail",
+        data: [],
+      });
+    }
 
-  if (status === "0" && !statusDetail) {
-    return res.status(400).send({
-      status: false,
-      message: "Missing status detail",
-      data: [],
-    });
-  }
-
-  if (status === "1") {
-    statusDetail = null;
+    if (status === "1") {
+      statusDetail = null;
+    }
   }
 
   try {
+    const updates = [];
+    const values = [];
+    let index = 2; // $1 is id
+
+    // ✅ Only update when NOT undefined AND NOT empty string
+
+    if (status !== undefined && status !== "") {
+      updates.push(`status = $${index++}`);
+      values.push(status);
+    }
+
+    if (uId !== undefined && uId !== "") {
+      updates.push(`becustofadmin = $${index++}`);
+      values.push(uId);
+    }
+
+    if (star !== undefined && star !== "") {
+      updates.push(`star = $${index++}`);
+      values.push(star);
+    }
+
+    if (statusDetail !== undefined && statusDetail !== "") {
+      updates.push(`statusdetail = $${index++}`);
+      values.push(statusDetail);
+    }
+
+    // ❗ Nothing to update
+    if (updates.length === 0) {
+      return res.status(400).send({
+        status: false,
+        message: "No valid data to update",
+        data: [],
+      });
+    }
+
     const query = `
       UPDATE public.tbmember
-      SET status = $2,
-          becustofadmin = $3,
-          statusdetail = $4
+      SET ${updates.join(", ")}
       WHERE id = $1
-      RETURNING id, status, becustofadmin, statusdetail;
+      RETURNING id, status, becustofadmin, star, statusdetail;
     `;
 
-    const result = await dbExecution(query, [
-      id,
-      status,
-      uId,
-      statusDetail ?? null,
-    ]);
+    const result = await dbExecution(query, [id, ...values]);
 
     if (!result || result.rowCount === 0) {
       return res.status(404).send({
@@ -686,6 +697,7 @@ export const memberUpdateBeLongToUser = async (req, res) => {
 
   } catch (error) {
     console.error("Error in memberUpdateBeLongToUser:", error);
+
     return res.status(500).send({
       status: false,
       message: "Internal Server Error",
@@ -693,3 +705,4 @@ export const memberUpdateBeLongToUser = async (req, res) => {
     });
   }
 };
+

@@ -1,7 +1,7 @@
-// controller/chat.controller.js
 import { dbExecution } from "../../dbconfig/dbconfig.js";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import { log } from "console";
 dotenv.config();
 
 // helper to create unique IDs
@@ -97,6 +97,52 @@ export const sendEmail = async (req, res) => {
     res.status(500).send({
       status: false,
       message: "Failed to send email",
+    });
+  }
+};
+export const getConv_id = async (req, res) => {
+  try {
+    const { memberA, memberB } = req.body;
+
+    console.log("Members:", memberA, memberB);
+
+    if (memberA == null || memberB == null) {
+      return res.status(400).send({
+        ok: false,
+        msg: "Both members required"
+      });
+    }
+
+    const q = `
+      SELECT cm1.conversation_id,cm1.memberid AS menberA,cm2.memberid AS menberB
+      FROM public.conversation_member cm1
+      JOIN public.conversation_member cm2
+        ON cm1.conversation_id = cm2.conversation_id
+      WHERE cm1.memberid = $1
+        AND cm2.memberid = $2;
+    `;
+
+    const r = await dbExecution(q, [memberA, memberB]);
+
+    // console.log("Query result:", r.rows);
+
+    if (r.rows.length > 0) {
+      return res.send({
+        ok: true,
+        convId: r.rows[0].conversation_id
+      });
+    } else {
+      return res.status(400).send({
+        ok: false,
+        msg: "No conversation found"
+      });
+    }
+
+  } catch (err) {
+    console.error("getConv_id error:", err);
+    return res.status(500).send({
+      ok: false,
+      msg: "Internal Server Error"
     });
   }
 };

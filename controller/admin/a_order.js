@@ -714,9 +714,9 @@ export const queryAllMemberActiveForSupperAdmin = async (req, res) => {
     // Fetch paginated data
     const dataQuery = `
     SELECT a.id as staffid, a.name as staffname, m.id, m.name, m.shopname, m.gender, 
-m.gmail, m.country, 
+m.gmail, m.country,
 m.state, m.profileimage,m.peoplecarorpassport, m.personalimage, m.accountname, m.bankaccount, 
-m.walletqr,m.subscribe,m.star,m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status,m.statusdetail, m.becustofadmin, m.cdate
+m.walletqr,m.subscribe,m.star,m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status,m.statusdetail, m.cdate
  FROM public.tbmember m left join
  public.tbadminuser a on a.id=m.becustofadmin
  where m.status='1' order by m.cdate desc
