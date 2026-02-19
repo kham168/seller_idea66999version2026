@@ -610,10 +610,10 @@ export const queryAdminAll = async (req, res) => {
   }
 };
 export const memberUpdateBeLongToUser = async (req, res) => {
-  const { id,type, status, uId, star } = req.body;
+  const { id, type, status, uId, star } = req.body;
   let { statusDetail } = req.body;
 
-  if (type!= "admin") {
+  if (type != "admin") {
     return res.status(400).send({
       status: false,
       message: "Missing type is not admin",
@@ -676,6 +676,22 @@ export const memberUpdateBeLongToUser = async (req, res) => {
       return res.status(400).send({
         status: false,
         message: "No valid data to update",
+        data: [],
+      });
+    }
+
+    const checkUserId = `
+     select count(*) as ct from public.tbadminuser where id=$1 and status='1';
+    `;
+    const checkResult = await dbExecution(checkUserId, [uId]);
+
+    if (
+      checkResult.rowCount === 0 ||
+      parseInt(checkResult.rows[0].ct, 10) === 0
+    ) {
+      return res.status(400).send({
+        status: false,
+        message: "Invalid user ID",
         data: [],
       });
     }
