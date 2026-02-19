@@ -689,76 +689,140 @@ m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status,statusdetail, 
     });
   }
 };
-
 export const queryAllMemberActiveForSupperAdmin = async (req, res) => {
   try {
+    const { id, type } = req.query;
+
     const page = req.query.page ?? 0;
     const limit = req.query.limit ?? 15;
+
+    if (type === "shop") {
+      return res.status(400).send({
+        status: false,
+        message: "Missing type",
+        data: [],
+      });
+    }
 
     const validPage = Math.max(parseInt(page, 10) || 0, 0);
     const validLimit = Math.max(parseInt(limit, 10) || 15, 1);
     const offset = validPage * validLimit;
 
-    // Count total
-    const countQuery = `
-    SELECT count(*) AS total
- FROM public.tbmember m inner join
- public.tbadminuser a on a.id=m.becustofadmin
- where m.status='1';
-    `;
-    const countResult = await dbExecution(countQuery, []);
-    const total = parseInt(countResult.rows[0]?.total || 0, 10);
-
     const baseUrl = "http://localhost:1789/";
 
-    // Fetch paginated data
-    const dataQuery = `
-    SELECT a.id as staffid, a.name as staffname, m.id, m.name, m.shopname, m.gender, 
-m.gmail, m.country,
-m.state, m.profileimage,m.peoplecarorpassport, m.personalimage, m.accountname, m.bankaccount, 
-m.walletqr,m.subscribe,m.star,m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status,m.statusdetail, m.cdate
- FROM public.tbmember m left join
- public.tbadminuser a on a.id=m.becustofadmin
- where m.status='1' order by m.cdate desc
-      LIMIT $1 OFFSET $2;
-    `;
+    let countQuery = "";
+    let dataQuery = "";
+    let params = [];
 
-    let rows = (await dbExecution(dataQuery, [validLimit, offset]))?.rows || [];
+    // ===============================
+    // ADMIN (all data)
+    // ===============================
+    if (type === "admin") {
+      countQuery = `
+        SELECT COUNT(*) AS total
+        FROM public.tbmember m
+        WHERE m.status = '1';
+      `;
 
-    // ✅ Safely parse JSON columns and image list
-    rows = rows.map((r) => {
-      const buildImage = (img) => {
-        if (!img) return null;
+      dataQuery = `
+        SELECT 
+          a.id AS staffid,
+          a.name AS staffname,
+          m.*
+        FROM public.tbmember m
+        LEFT JOIN public.tbadminuser a 
+          ON a.id = m.becustofadmin
+        WHERE m.status = '1'
+        ORDER BY m.cdate DESC
+        LIMIT $1 OFFSET $2;
+      `;
 
-        // Already array (future-proof)
-        if (Array.isArray(img)) {
-          return img.map((i) => baseUrl + i);
+      params = [validLimit, offset];
+    }
+    // ===============================
+    // NORMAL USER (filter by id)
+    // ===============================
+    else {
+      if (!id) {
+        return res.status(400).send({
+          status: false,
+          message: "Missing id",
+          data: [],
+        });
+      }
+
+      countQuery = `
+        SELECT COUNT(*) AS total
+        FROM public.tbmember m
+        WHERE m.status = '1'
+        AND m.becustofadmin = $1;
+      `;
+
+      dataQuery = `
+        SELECT 
+          a.id AS staffid,
+          a.name AS staffname,
+          m.*
+        FROM public.tbmember m
+        INNER JOIN public.tbadminuser a 
+          ON a.id = m.becustofadmin
+        WHERE m.status = '1'
+        AND m.becustofadmin = $1
+        ORDER BY m.cdate DESC
+        LIMIT $2 OFFSET $3;
+      `;
+
+      params = [id, validLimit, offset];
+    }
+
+    // ===============================
+    // COUNT
+    // ===============================
+    const countResult = await dbExecution(
+      countQuery,
+      type === "admin" ? [] : [id],
+    );
+
+    const total = parseInt(countResult.rows[0]?.total || 0, 10);
+
+    // ===============================
+    // DATA
+    // ===============================
+    let rows = (await dbExecution(dataQuery, params))?.rows || [];
+
+    // ===============================
+    // FORMAT IMAGE
+    // ===============================
+    const buildImage = (img) => {
+      if (!img) return null;
+
+      if (Array.isArray(img)) {
+        return img.map((i) => baseUrl + i);
+      }
+
+      if (typeof img === "string" && img.trim().startsWith("[")) {
+        try {
+          return JSON.parse(img).map((i) => baseUrl + i);
+        } catch {
+          return null;
         }
+      }
 
-        // JSON string array
-        if (typeof img === "string" && img.trim().startsWith("[")) {
-          try {
-            return JSON.parse(img).map((i) => baseUrl + i);
-          } catch {
-            return null;
-          }
-        }
+      return baseUrl + img;
+    };
 
-        // Single string
-        return baseUrl + img;
-      };
+    rows = rows.map((r) => ({
+      ...r,
+      profileimage: buildImage(r.profileimage),
+      peoplecarorpassport: buildImage(r.peoplecarorpassport),
+      personalimage: buildImage(r.personalimage),
+      walletqr: buildImage(r.walletqr),
+    }));
 
-      return {
-        ...r,
-        profileimage: buildImage(r.profileimage),
-        peoplecarorpassport: buildImage(r.peoplecarorpassport),
-        personalimage: buildImage(r.personalimage),
-        walletqr: buildImage(r.walletqr),
-      };
-    });
-
-    // ✅ Response
-    res.status(200).send({
+    // ===============================
+    // RESPONSE
+    // ===============================
+    return res.status(200).send({
       status: true,
       message: rows.length > 0 ? "Query successful" : "No data found",
       data: rows,
@@ -770,12 +834,14 @@ m.walletqr,m.subscribe,m.star,m.wallet, m.totalsell, m.totalincome, m.totalwithd
       },
     });
   } catch (error) {
-    console.error("Error in queryaAll:", error);
-    res.status(500).send({
+    console.error("Error in queryAllMemberActiveForSupperAdmin:", error);
+
+    return res.status(500).send({
       status: false,
       message: "Internal Server Error",
       data: [],
-      error: error.message,
+      // hide real error in production
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
