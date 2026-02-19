@@ -610,8 +610,16 @@ export const queryAdminAll = async (req, res) => {
   }
 };
 export const memberUpdateBeLongToUser = async (req, res) => {
-  const { id, status, uId, star } = req.body;
+  const { id,type, status, uId, star } = req.body;
   let { statusDetail } = req.body;
+
+  if (type!= "admin") {
+    return res.status(400).send({
+      status: false,
+      message: "Missing type is not admin",
+      data: [],
+    });
+  }
 
   if (!id) {
     return res.status(400).send({
@@ -694,7 +702,6 @@ export const memberUpdateBeLongToUser = async (req, res) => {
       message: "Updated successfully",
       data: result.rows[0],
     });
-
   } catch (error) {
     console.error("Error in memberUpdateBeLongToUser:", error);
 
@@ -705,4 +712,3 @@ export const memberUpdateBeLongToUser = async (req, res) => {
     });
   }
 };
-
