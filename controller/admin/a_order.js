@@ -626,8 +626,8 @@ export const queryAllMemberWhoBeLongToAdminId = async (req, res) => {
     SELECT a.id as staffid, a.name as staffname, m.id, m.name, m.shopname, m.gender, 
 m.gmail, m.country, 
 m.state, m.profileimage,personalimage, m.accountname, m.bankaccount,walletqr,subscribe, star,
-m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status,statusdetail, m.becustofadmin, m.cdate
- FROM public.tbmember m inner join
+m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status,statusdetail, m.becustofadmin, m.cdate,m.free_credit
+  FROM public.tbmember m inner join
  public.tbadminuser a on a.id=m.becustofadmin
  where a.id=$1 and m.status='1'
       LIMIT $2 OFFSET $3;
@@ -872,7 +872,7 @@ export const queryAllMemberStatusIs2And0ForSupperAdmin = async (req, res) => {
     SELECT a.id as staffid, a.name as staffname, m.id, m.name, m.shopname, m.gender, 
 m.gmail, m.country, 
 m.state, m.profileimage,m.peoplecarorpassport, m.personalimage, m.accountname, m.bankaccount, 
-m.walletqr,m.subscribe,m.star,m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status,m.statusdetail, m.becustofadmin, m.cdate
+m.walletqr,m.subscribe,m.star,m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status,m.statusdetail, m.becustofadmin, m.cdate, m.free_credit
  FROM public.tbmember m left join
  public.tbadminuser a on a.id=m.becustofadmin
  where m.status in('2','0') order by m.cdate desc
@@ -962,7 +962,7 @@ export const queryAllMemberUnActiveForSupperAdmin = async (req, res) => {
     SELECT a.id as staffid, a.name as staffname, m.id, m.name, m.shopname, m.gender, 
 m.gmail, m.country, 
 m.state, m.profileimage,m.peoplecarorpassport, m.personalimage, m.accountname, m.bankaccount, 
-m.walletqr,m.subscribe,m.star,m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status,m.statusdetail, m.becustofadmin, m.cdate
+m.walletqr,m.subscribe,m.star,m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status,m.statusdetail, m.becustofadmin, m.cdate, m.free_credit
  FROM public.tbmember m left join
  public.tbadminuser a on a.id=m.becustofadmin
  where m.status='0' order by m.cdate desc

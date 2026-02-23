@@ -47,7 +47,7 @@ export const createConversation = async (req, res) => {
 export const getConversationMessages = async (req, res) => {
   const convId = req.params.id;
   const page = parseInt(req.query.page || "0", 10);
-  const limit = parseInt(req.query.limit || "30", 10);
+  const limit = parseInt(req.query.limit || "10", 10);
   const offset = page * limit;
 
   try {

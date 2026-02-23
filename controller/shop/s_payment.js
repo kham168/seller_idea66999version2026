@@ -29,7 +29,7 @@ export const query_logs_adjust_and_payment = async (req, res) => {
 
     // Query logs
     const querySelect = `
-      SELECT id, memberid, orderid, type, amount, confirmamount, creditb, 
+      SELECT id, memberid, orderid, type,toid, amount, confirmamount, creditb, 
              creditf, status,resultdesc, account, imagepayment, userconfirm, cfcdate, cdate
       FROM public.tblogsmemberpayment
       WHERE memberid = $1
@@ -71,7 +71,7 @@ export const query_logs_adjust_and_payment = async (req, res) => {
 };
 
 export const member_refill_wallet = async (req, res) => {
-  const { id, amount } = req.body;
+  const { id, toId, amount } = req.body;
 
   if (!id || amount == null) {
     return res.status(400).send({
@@ -90,6 +90,28 @@ export const member_refill_wallet = async (req, res) => {
     });
   }
 
+  if (!toId || toId === "") {
+    toId = id;
+  } else {
+    const checkStatus = `SELECT status FROM public.tbmember WHERE id=$1;`;
+    const checkResult = await dbExecution(checkStatus, [toId]);
+    if (checkResult.rowCount === 0) {
+      return res.status(400).send({
+        status: false,
+        message: "Recipient member not found",
+        data: [],
+      });
+    }
+    const recipientStatus = checkResult.rows[0].status;
+    if (recipientStatus !== "1") {
+      return res.status(400).send({
+        status: false,
+        message: "Recipient member is not active",
+        data: [],
+      });
+    }
+  }
+
   // Collect uploaded image filenames
   const imageArray =
     req.files && req.files.length > 0
@@ -101,15 +123,16 @@ export const member_refill_wallet = async (req, res) => {
 
     const insertLog = `
       INSERT INTO public.tblogsmemberpayment(
-        id, memberid, type, amount, status, imagepayment, cdate
+        id, memberid, type, toid, amount, status, imagepayment, cdate
       )
-      VALUES ($1, $2, 'refill', $3, $4, $5, NOW())
+      VALUES ($1, $2, 'refill', $3, $4, $5,$6, NOW())
       RETURNING *;
     `;
 
     const logInserted = await dbExecution(insertLog, [
       generateId, // id
       id, // memberid
+      toId,
       refillAmount, // amount
       "pending", // status
       imageArray, // imagepayment

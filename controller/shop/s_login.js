@@ -253,7 +253,7 @@ export const queryMemberData = async (req, res) => {
         personalimage,
         accountname, bankaccount, walletqr,
         subscribe, star, wallet, totalsell, totalincome,
-        totalwithdrawal, status, statusdetail, becustofadmin, cdate
+        totalwithdrawal, status, statusdetail, becustofadmin, cdate 
       FROM public.tbmember 
       WHERE id = $1 AND status = '1';
     `;

@@ -69,11 +69,13 @@ export const adminConfirmUserAccount = async (req, res) => {
     });
   }
 };
-
 export const adminManualAddCreditToMember123 = async (req, res) => {
-  const { id, orderid, confirmType, amount } = req.body;
+  let { id, userType, amount } = req.body;
 
-  if (!id || !amount) {
+  const cleanId = String(id).trim();
+  const amountNum = Number(amount);
+
+  if (!cleanId || !amountNum) {
     return res.status(400).send({
       status: false,
       message: "Missing id or amount",
@@ -81,22 +83,21 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
     });
   }
 
-  const amountNum = Number(amount);
-  if (Number.isNaN(amountNum) || amountNum <= 0) {
-    return res.status(400).send({
+  if (userType !== "admin") {
+    return res.status(403).send({
       status: false,
-      message: "Invalid amount",
+      message: "Unauthorized: Only admin can add credit",
       data: [],
     });
   }
 
   try {
     const selectResult = await dbExecution(
-      `SELECT wallet FROM public.tbmember WHERE id=$1`,
-      [id],
+      `SELECT id, wallet, free_credit, status FROM public.tbmember WHERE id=$1`,
+      [cleanId],
     );
 
-    if (selectResult.rowCount === 0) {
+    if (!selectResult || selectResult.rowCount === 0) {
       return res.status(404).send({
         status: false,
         message: "Member not found",
@@ -105,45 +106,38 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
     }
 
     const walletNum = Number(selectResult.rows[0].wallet) || 0;
+    const freeCredit = Number(selectResult.rows[0].free_credit) || 0;
+    const status = Number(selectResult.rows[0].status) || 0;
+
+    if (status !== 1) {
+      return res.status(400).send({
+        status: false,
+        message: "Member is not active",
+        data: [],
+      });
+    }
+
     const amountAfter = walletNum + amountNum;
+    const freeCreditAfter = freeCredit + amountNum;
 
     const memberUpdated = await dbExecution(
-      `UPDATE public.tbmember SET wallet=$2 WHERE id=$1 RETURNING id, wallet`,
-      [id, amountAfter],
-    );
-
-    const logId = Math.random().toString(36).substring(2, 11);
-
-    const logInserted = await dbExecution(
-      `INSERT INTO public.tblogsmemberpayment
-       (id, memberid, orderid, type, amount, creditb, creditf, status, cdate)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,'1',NOW())
-       RETURNING *`,
-      [
-        logId,
-        id,
-        orderid || null,
-        confirmType || "ADMIN_ADD",
-        amountNum,
-        walletNum,
-        amountAfter,
-      ],
+      `UPDATE public.tbmember 
+       SET wallet=$2, free_credit=$3 
+       WHERE id=$1 
+       RETURNING id, wallet, free_credit`,
+      [cleanId, amountAfter, freeCreditAfter],
     );
 
     return res.status(200).send({
       status: true,
-      message: "Wallet credited successfully",
-      data: {
-        member: memberUpdated.rows[0],
-        log: logInserted.rows[0],
-      },
+      message: "Add credited successfully",
+      data: memberUpdated.rows[0],
     });
   } catch (error) {
-    console.error("Error in adminManualAddCreditToMember123:", error);
+    console.error("Error:", error);
     return res.status(500).send({
       status: false,
       message: "Internal Server Error",
-      error: error.message,
       data: [],
     });
   }
@@ -441,7 +435,7 @@ export const acUpdateData = async (req, res) => {
       updates.push(`actype = $${paramIndex++}`);
       values.push(type);
     }
- 
+
     if (status) {
       updates.push(`status = $${paramIndex++}`);
       values.push(status);
