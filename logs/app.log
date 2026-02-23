@@ -503,3 +503,23 @@ m.wallet, m.totalsell, m.totalincome, m.totalwithdrawal, m.status, m.becustofadm
     
 
 Params: 1,12,0
+2026-02-23 16:53:57	Query: INSERT INTO public.tbadmin_confirm_data(
+	transid, type, userid, username, amountbf, amount, amountat, cdate)
+	VALUES ($1, 'addfreecredit', $2, $3, $4, $5, $6, NOW());
+      RETURNING *;
+    
+
+Params: 2,1,test,0,1000,1000
+2026-02-23 16:54:22	Query: INSERT INTO public.tbadmin_confirm_data(
+	transid, type, userid, username, amountbf, amount, amountat, cdate)
+	VALUES ($1, 'addfreecredit', $2, $3, $4, $5, $6, NOW());
+      RETURNING *;
+    
+
+Params: 2,1,test,1000,1000,2000
+2026-02-23 17:15:32	Query: INSERT INTO public.tbadmin_confirm_data(
+	transid, type, userid, username, amountbf, amount, amountat,detail, cdate)
+	VALUES ($1, 'addfreecredit', $2, $3, $4, $5, $6, NOW());
+    
+
+Params: 2,1,test,3000,1000,4000,acbd

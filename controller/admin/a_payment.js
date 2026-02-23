@@ -69,13 +69,14 @@ export const adminConfirmUserAccount = async (req, res) => {
     });
   }
 };
-export const adminManualAddCreditToMember123 = async (req, res) => {
-  let { id, userType, amount } = req.body;
 
-  const cleanId = String(id).trim();
+export const adminManualAddCreditToMember123 = async (req, res) => {
+  let { memberId, userId, amount, detail } = req.body;
+
+  const cleanId = String(memberId).trim();
   const amountNum = Number(amount);
 
-  if (!cleanId || !amountNum) {
+  if (!cleanId || !userId || !amountNum) {
     return res.status(400).send({
       status: false,
       message: "Missing id or amount",
@@ -83,15 +84,26 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
     });
   }
 
-  if (userType !== "admin") {
-    return res.status(403).send({
-      status: false,
-      message: "Unauthorized: Only admin can add credit",
-      data: [],
-    });
-  }
-
   try {
+    const checkUserQuery = `SELECT id, name, usertype FROM public.tbadminuser where status='1' and id=$1;`;
+    const checkUserResult = await dbExecution(checkUserQuery, [userId]);
+
+    if (!checkUserResult || checkUserResult.rowCount === 0) {
+      return res.status(404).send({
+        status: false,
+        message: "Admin user not found",
+        data: [],
+      });
+    } else if (checkUserResult.rows[0].usertype !== "admin") {
+      return res.status(403).send({
+        status: false,
+        message: "Unauthorized: User is not admin",
+        data: [],
+      });
+    }
+
+    const userName = checkUserResult.rows[0].name || 0;
+
     const selectResult = await dbExecution(
       `SELECT id, wallet, free_credit, status FROM public.tbmember WHERE id=$1`,
       [cleanId],
@@ -127,6 +139,20 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
        RETURNING id, wallet, free_credit`,
       [cleanId, amountAfter, freeCreditAfter],
     );
+
+    const insertLog = `INSERT INTO public.tbadmin_confirm_data(
+	transid, type, userid, username, amountbf, amount, amountat,detail, cdate)
+	VALUES ($1, 'addfreecredit', $2, $3, $4, $5, $6,$7, NOW());
+    `;
+    const logInserted = await dbExecution(insertLog, [
+      cleanId,
+      userId,
+      userName,
+      freeCredit,
+      amountNum,
+      freeCreditAfter,
+      detail,
+    ]);
 
     return res.status(200).send({
       status: true,
@@ -579,6 +605,50 @@ export const insertACData = async (req, res) => {
       status: false,
       message: "Internal Server Error",
       error: error.message,
+      data: [],
+    });
+  }
+};
+
+export const getUserConfirmData = async (req, res) => {
+  const { id } = req.query;
+
+  if (!id) {
+    return res.status(400).send({
+      status: false,
+      message: "Missing transid",
+      data: [],
+    });
+  }
+
+  try {
+    const query = `
+      SELECT *
+      FROM public.tbadmin_confirm_data
+      WHERE transid = $1
+      ORDER BY cdate DESC;
+    `;
+
+    const result = await dbExecution(query, [id]);
+
+    if (!result || result.rowCount === 0) {
+      return res.status(404).send({
+        status: false,
+        message: "No confirmation data found",
+        data: [],
+      });
+    }
+
+    return res.status(200).send({
+      status: true,
+      message: "Query successful",
+      data: result.rows,
+    });
+  } catch (error) {
+    console.error("Error in getUserConfirmData:", error);
+    return res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
       data: [],
     });
   }

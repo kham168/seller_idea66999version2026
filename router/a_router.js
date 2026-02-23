@@ -38,7 +38,7 @@ import {
   acUpdateData,
   queryACData,
   adminConfirmUserAccount,
-  adminManualAddCreditToMember123,
+  adminManualAddCreditToMember123,getUserConfirmData
 } from "../controller/admin/a_payment.js";
 import { uploadImage } from "../middleware/product.uploadimage.js";
 //import { protect } from "../middleware/token.js"; insertOrderData
@@ -100,5 +100,6 @@ router.put("/updatePasswordCFByMail", verifyJWT, updatePasswordConfirmByMail);
 router.post("/confirmIncomeToMember", verifyJWT, confirmIncomeIntoMemberWallet);
 router.put("/adminConfirmUACID", verifyJWT, adminConfirmUserAccount);
 router.put("/adminManualACDFMB", verifyJWT, adminManualAddCreditToMember123);
+router.get("/logAdminConfirmData", verifyJWT, getUserConfirmData);
 
 export default router;
