@@ -87,6 +87,7 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
     let pendingCount = "0";
     let transId = "";
     let memberUpdated; // ✅ FIX
+    let StatusID=0;
 
     const checkUserQuery = `
       SELECT id, name, usertype 
@@ -120,18 +121,20 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
       FROM (
         SELECT id, memberid, toid
         FROM public.tblogsmemberpayment 
-        WHERE toid=$1 AND status='pending'
+        WHERE toid=$1 and cast(amount as INTEGER)=$2 AND status='pending'
         ORDER BY cdate ASC 
         LIMIT 1
       ) s;
     `;
 
-    const checkStatusResult = await dbExecution(checkStatus, [cleanId]);
+    const checkStatusResult = await dbExecution(checkStatus, [cleanId, amountNum]);
     if (!checkStatusResult || checkStatusResult.rowCount === 0) {
       pendingCount = "0";
-    }
+    }else{
     transId = checkStatusResult.rows[0].id;
-    const StatusID = Number(checkStatusResult.rows[0].ct);
+     StatusID = Number(checkStatusResult.rows[0].ct);
+    }
+    
     if (StatusID === 1) {
       // ✅ FIX rows
       return res.status(403).send({
