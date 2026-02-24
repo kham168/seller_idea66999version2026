@@ -355,7 +355,7 @@ export const StaffConfirmPayForMemberPaymentAndWithdraw = async (req, res) => {
   try {
     // 1️⃣ Get member wallet
     const sqlED = `
-     SELECT sum(totalprice) as total
+     SELECT SUM(CAST(totalprice AS INTEGER)) as total
 	FROM public.tborderpd where memberid=$1 and sellstatus='pending'
     `;
     const resulted = await dbExecution(sqlED, [memberId]);
@@ -367,10 +367,10 @@ export const StaffConfirmPayForMemberPaymentAndWithdraw = async (req, res) => {
         data: [],
       });
     }
-
+    //
     const totalAmountPending = Number(resulted.rows[0].total);
 
-    if (totalAmountPending > 0) {
+    if (totalAmountPending > 0 && type === "withdraw") {
       const updateLog = `
      Update public.tblogsmemberpayment set status='fail',resultdesc='Some orders are currently pending.' where id=$1;
     `;
@@ -390,7 +390,7 @@ export const StaffConfirmPayForMemberPaymentAndWithdraw = async (req, res) => {
       SELECT wallet, totalwithdrawal
       FROM public.tbmember m inner join public.tblogsmemberpayment l 
 	  on l.memberid=m.id and m.id=$1 and l.id=$2
-      WHERE l.status='pending' AND m.status='1'
+      WHERE l.status='pending' AND m.status='1' and l.memberid<>l.toid;
     `;
     const result = await dbExecution(sql, [memberId, id]);
 
