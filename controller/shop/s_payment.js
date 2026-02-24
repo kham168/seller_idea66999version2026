@@ -18,6 +18,8 @@ export const query_logs_adjust_and_payment = async (req, res) => {
   const offset = validPage * validLimit;
 
   try {
+    const baseUrl = "http://localhost:1789/";
+
     // Count total
     const countQuery = `
       SELECT COUNT(*) AS total
@@ -29,8 +31,8 @@ export const query_logs_adjust_and_payment = async (req, res) => {
 
     // Query logs
     const querySelect = `
-      SELECT id, memberid, orderid, type,toid, amount, confirmamount, creditb, 
-             creditf, status,resultdesc, account, imagepayment, userconfirm, cfcdate, cdate
+      SELECT id, memberid, orderid, type, toid, amount, confirmamount, creditb, 
+             creditf, status, resultdesc, account, imagepayment, userconfirm, cfcdate, cdate
       FROM public.tblogsmemberpayment
       WHERE memberid = $1
       ORDER BY cdate DESC
@@ -43,7 +45,20 @@ export const query_logs_adjust_and_payment = async (req, res) => {
       offset,
     ]);
 
-    const data = selectResult?.rows || [];
+    const cleanImagePath = (value) => {
+      if (!value) return null;
+
+      return value.replace(/[{}"]/g, "").replace(/\\/g, "").trim();
+    };
+
+    const data = (selectResult?.rows || []).map((item) => {
+      const cleanPath = cleanImagePath(item.imagepayment);
+
+      return {
+        ...item,
+        imagepayment: cleanPath ? baseUrl + cleanPath : null,
+      };
+    });
 
     return res.status(200).send({
       status: true,
@@ -71,7 +86,7 @@ export const query_logs_adjust_and_payment = async (req, res) => {
 };
 
 export const member_refill_wallet = async (req, res) => {
-  const { id, toId, amount } = req.body;
+  let { id, toId, amount } = req.body;
 
   if (!id || amount == null) {
     return res.status(400).send({

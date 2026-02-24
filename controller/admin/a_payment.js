@@ -69,7 +69,6 @@ export const adminConfirmUserAccount = async (req, res) => {
     });
   }
 };
-
 export const adminManualAddCreditToMember123 = async (req, res) => {
   let { memberId, userId, amount, detail } = req.body;
 
@@ -85,7 +84,15 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
   }
 
   try {
-    const checkUserQuery = `SELECT id, name, usertype FROM public.tbadminuser where status='1' and id=$1;`;
+    let pendingCount = "0";
+    let transId = "";
+    let memberUpdated; // ✅ FIX
+
+    const checkUserQuery = `
+      SELECT id, name, usertype 
+      FROM public.tbadminuser 
+      WHERE status='1' AND id=$1;
+    `;
     const checkUserResult = await dbExecution(checkUserQuery, [userId]);
 
     if (!checkUserResult || checkUserResult.rowCount === 0) {
@@ -94,7 +101,9 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
         message: "Admin user not found",
         data: [],
       });
-    } else if (checkUserResult.rows[0].usertype !== "admin") {
+    }
+
+    if (checkUserResult.rows[0].usertype !== "admin") {
       return res.status(403).send({
         status: false,
         message: "Unauthorized: User is not admin",
@@ -102,10 +111,48 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
       });
     }
 
-    const userName = checkUserResult.rows[0].name || 0;
+    const userName = checkUserResult.rows[0].name || "";
 
+    // 🔍 Check pending
+    const checkStatus = `
+      SELECT id,
+             CASE WHEN memberid=toid THEN '1' ELSE '2' END AS CT
+      FROM (
+        SELECT id, memberid, toid
+        FROM public.tblogsmemberpayment 
+        WHERE toid=$1 AND status='pending'
+        ORDER BY cdate ASC 
+        LIMIT 1
+      ) s;
+    `;
+
+    const checkStatusResult = await dbExecution(checkStatus, [cleanId]);
+    if (!checkStatusResult || checkStatusResult.rowCount === 0) {
+      pendingCount = "0";
+    }
+    transId = checkStatusResult.rows[0].id;
+    const StatusID = Number(checkStatusResult.rows[0].ct);
+    if (StatusID === 1) {
+      // ✅ FIX rows
+      return res.status(403).send({
+        status: false,
+        message: "Please confirm pending refill first",
+        data: [],
+      });
+    }
+
+    if (StatusID === 2) {
+      // ✅ FIX rows
+      pendingCount = "1";
+    }
+
+    //console.log("Pending count:", checkStatusResult.rows[0], "==>", StatusID); // ✅ Debug log
+
+    // 🔍 Get member
     const selectResult = await dbExecution(
-      `SELECT id, wallet, free_credit, status FROM public.tbmember WHERE id=$1`,
+      `SELECT id, wallet, free_credit, status 
+       FROM public.tbmember 
+       WHERE id=$1`,
       [cleanId],
     );
 
@@ -116,6 +163,8 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
         data: [],
       });
     }
+
+    //console.log("Member data:", checkStatusResult.rows[0]); // ✅ Debug log
 
     const walletNum = Number(selectResult.rows[0].wallet) || 0;
     const freeCredit = Number(selectResult.rows[0].free_credit) || 0;
@@ -132,32 +181,57 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
     const amountAfter = walletNum + amountNum;
     const freeCreditAfter = freeCredit + amountNum;
 
-    const memberUpdated = await dbExecution(
-      `UPDATE public.tbmember 
-       SET wallet=$2, free_credit=$3 
-       WHERE id=$1 
-       RETURNING id, wallet, free_credit`,
-      [cleanId, amountAfter, freeCreditAfter],
-    );
+    if (pendingCount === "1") {
+      memberUpdated = await dbExecution(
+        `UPDATE public.tbmember 
+         SET wallet=$2
+         WHERE id=$1 
+         RETURNING id, wallet`,
+        [cleanId, amountAfter],
+      );
 
-    const insertLog = `INSERT INTO public.tbadmin_confirm_data(
-	transid, type, userid, username, amountbf, amount, amountat,detail, cdate)
-	VALUES ($1, 'addfreecredit', $2, $3, $4, $5, $6,$7, NOW());
-    `;
-    const logInserted = await dbExecution(insertLog, [
-      cleanId,
-      userId,
-      userName,
-      freeCredit,
-      amountNum,
-      freeCreditAfter,
-      detail,
-    ]);
+      await dbExecution(
+        `UPDATE public.tblogsmemberpayment
+         SET confirmamount=0,
+             creditb=0,
+             creditf=0,
+             status='completed',
+             userconfirm=$2,
+             cfcdate=NOW()
+         WHERE id=$1 AND type='refill'`,
+        [transId, userId],
+      );
+    } else {
+      memberUpdated = await dbExecution(
+        `UPDATE public.tbmember 
+         SET wallet=$2, free_credit=$3 
+         WHERE id=$1 
+         RETURNING id, wallet, free_credit`,
+        [cleanId, amountAfter, freeCreditAfter],
+      );
+    }
+
+    // Insert admin log
+    await dbExecution(
+      `INSERT INTO public.tbadmin_confirm_data(
+        transid, type, userid, username, amountbf, amount, amountat, detail, cdate
+      )
+      VALUES ($1, 'addfreecredit', $2, $3, $4, $5, $6, $7, NOW())`,
+      [
+        cleanId,
+        userId,
+        userName,
+        freeCredit,
+        amountNum,
+        freeCreditAfter,
+        detail,
+      ],
+    );
 
     return res.status(200).send({
       status: true,
       message: "Add credited successfully",
-      data: memberUpdated.rows[0],
+      data: memberUpdated.rows[0], // ✅ now safe
     });
   } catch (error) {
     console.error("Error:", error);
@@ -623,8 +697,7 @@ export const getUserConfirmData = async (req, res) => {
 
   try {
     const query = `
-      SELECT *
-      FROM public.tbadmin_confirm_data
+      SELECT * FROM public.tbadmin_confirm_data
       WHERE transid = $1
       ORDER BY cdate DESC;
     `;
