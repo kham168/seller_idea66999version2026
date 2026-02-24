@@ -390,7 +390,7 @@ export const StaffConfirmPayForMemberPaymentAndWithdraw = async (req, res) => {
       SELECT wallet, totalwithdrawal
       FROM public.tbmember m inner join public.tblogsmemberpayment l 
 	  on l.memberid=m.id and m.id=$1 and l.id=$2
-      WHERE l.status='pending' AND m.status='1' and l.memberid<>l.toid;
+      WHERE l.status='pending' AND m.status='1' and l.memberid=l.toid;
     `;
     const result = await dbExecution(sql, [memberId, id]);
 
