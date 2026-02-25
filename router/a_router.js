@@ -23,6 +23,7 @@ import {
   updatePasswordConfirmByMail,
   getAllUserAC,
   memberUpdateBeLongToUser,
+  queryShopAndOrderPendingList
 } from "../controller/admin/a_login.js";
 import {
   confirmSellStatus,
@@ -83,6 +84,7 @@ router.post(
   StaffConfirmPayForMemberPaymentAndWithdraw,
 );
 router.post("/adminLoginN", adminLogin);
+router.get("/getShopOrderPending",verifyJWT, queryShopAndOrderPendingList);
 router.get("/getAdminDataById", verifyJWT, queryAdminData);
 router.get("/getUserAll", verifyJWT, getAllUserAC);
 router.post("/adminRegister", verifyJWT, admin_register);

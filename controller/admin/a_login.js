@@ -609,6 +609,7 @@ export const queryAdminAll = async (req, res) => {
     });
   }
 };
+
 export const memberUpdateBeLongToUser = async (req, res) => {
   const { id, type, status, uId, star } = req.body;
   let { statusDetail } = req.body;
@@ -724,6 +725,51 @@ export const memberUpdateBeLongToUser = async (req, res) => {
     return res.status(500).send({
       status: false,
       message: "Internal Server Error",
+      data: [],
+    });
+  }
+};
+
+//select count(*) as CT from public.tbmember where status='2'
+
+//select count(*) as CT from public.tborderpd where sellstatus='pending'
+
+export const queryShopAndOrderPendingList = async (req, res) => {
+    
+
+  try {
+    const queryShop = `select count(*) as CT from public.tbmember where status='2';`;
+    const shopResult = await dbExecution(queryShop, []);
+    const queryOrder = `select count(*) as CT from public.tborderpd where sellstatus='pending';`;
+    const orderResult = await dbExecution(queryOrder, []);
+
+    if (
+      !shopResult ||
+      (shopResult.rowCount === 0 && !orderResult) ||
+      orderResult.rowCount === 0
+    ) {
+      return res.status(200).send({
+        status: true,
+        message: "No data found",
+        data: [],
+      });
+    } else {
+      let shop = parseInt(shopResult.rows[0].ct, 0);
+      let order = parseInt(orderResult.rows[0].ct, 0);
+
+      return res.status(200).send({
+        status: true,
+        message: "Query successful",
+        shop,
+        order,
+      });
+    }
+  } catch (error) {
+    console.error("Error in queryMemberData:", error);
+    res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      error: error.message,
       data: [],
     });
   }

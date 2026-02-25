@@ -69,11 +69,12 @@ export const adminConfirmUserAccount = async (req, res) => {
     });
   }
 };
+
 export const adminManualAddCreditToMember123 = async (req, res) => {
   let { memberId, userId, amount, detail } = req.body;
 
-  const cleanId = String(memberId).trim();
-  const amountNum = Number(amount);
+  let cleanId = String(memberId).trim();
+  let amountNum = Number(amount);
 
   if (!cleanId || !userId || !amountNum) {
     return res.status(400).send({
@@ -87,14 +88,13 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
     let pendingCount = "0";
     let transId = "";
     let memberUpdated; // ✅ FIX
-    let StatusID=0;
 
-    const checkUserQuery = `
+    const checkUser = `
       SELECT id, name, usertype 
       FROM public.tbadminuser 
       WHERE status='1' AND id=$1;
     `;
-    const checkUserResult = await dbExecution(checkUserQuery, [userId]);
+    const checkUserResult = await dbExecution(checkUser, [userId]);
 
     if (!checkUserResult || checkUserResult.rowCount === 0) {
       return res.status(404).send({
@@ -116,36 +116,20 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
 
     // 🔍 Check pending
     const checkStatus = `
-      SELECT id,
-             CASE WHEN memberid=toid THEN '1' ELSE '2' END AS CT
-      FROM (
-        SELECT id, memberid, toid
+        SELECT id, toid, amount 
         FROM public.tblogsmemberpayment 
-        WHERE toid=$1 and cast(amount as INTEGER)=$2 AND status='pending'
+        WHERE id=$1 AND status='pending'
         ORDER BY cdate ASC 
-        LIMIT 1
-      ) s;
+        LIMIT 1;
     `;
 
-    const checkStatusResult = await dbExecution(checkStatus, [cleanId, amountNum]);
+    const checkStatusResult = await dbExecution(checkStatus, [cleanId]);
     if (!checkStatusResult || checkStatusResult.rowCount === 0) {
       pendingCount = "0";
-    }else{
-    transId = checkStatusResult.rows[0].id;
-     StatusID = Number(checkStatusResult.rows[0].ct);
-    }
-    
-    if (StatusID === 1) {
-      // ✅ FIX rows
-      return res.status(403).send({
-        status: false,
-        message: "Please confirm pending refill first",
-        data: [],
-      });
-    }
-
-    if (StatusID === 2) {
-      // ✅ FIX rows
+    } else {
+      transId = checkStatusResult.rows[0].id;
+      cleanId = checkStatusResult.rows[0].toid;
+      amount = Number(checkStatusResult.rows[0].amount);
       pendingCount = "1";
     }
 
@@ -199,12 +183,13 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
              creditb=0,
              creditf=0,
              status='completed',
+             resultdesc='refill to other account done',
              userconfirm=$2,
              cfcdate=NOW()
          WHERE id=$1 AND type='refill'`,
         [transId, userId],
       );
-    } else {
+    } else if (cleanId && amountNum) {
       memberUpdated = await dbExecution(
         `UPDATE public.tbmember 
          SET wallet=$2, free_credit=$3 
@@ -212,6 +197,20 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
          RETURNING id, wallet, free_credit`,
         [cleanId, amountAfter, freeCreditAfter],
       );
+    } else {
+      return res.status(400).send({
+        status: false,
+        message: "Missing member id or amount",
+        data: [],
+      });
+    }
+
+    if (!memberUpdated || memberUpdated.rowCount === 0) {
+      return res.status(404).send({
+        status: false,
+        message: "Failed to update member wallet",
+        data: [],
+      });
     }
 
     // Insert admin log
