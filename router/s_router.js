@@ -44,7 +44,7 @@ router.put(
   upload.fields([
     { name: "profileimage", maxCount: 1 },
     { name: "peopleCarOrPassport", maxCount: 1 },
-    { name: "personalImage", maxCount: 3 },
+    { name: "personalImage", maxCount: 1 },
     { name: "walletQr", maxCount: 1 },
   ]),verifyJWT,
   memberUpdateImageProfile,

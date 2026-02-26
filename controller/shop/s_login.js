@@ -418,17 +418,15 @@ export const memberUpdateImageProfile = async (req, res) => {
     const profileImageFile = req.files?.profileimage?.[0]?.filename || null;
     const peopleCarOrPassport =
       req.files?.peopleCarOrPassport?.[0]?.filename || null;
-    const personalImageArray = req.files?.personalImage
+    const personalImage = req.files?.personalImage
       ? req.files.personalImage.map((file) => file.filename)
       : [];
     const walletQrFile = req.files?.walletQr?.[0]?.filename || null;
 
-
-//  { name: "profileimage", maxCount: 1 },
-//     { name: "peopleCarOrPassport", maxCount: 1 },
-//     { name: "personalImage", maxCount: 3 },
-//     { name: "walletQr", maxCount: 1 },
- 
+    //  { name: "profileimage", maxCount: 1 },
+    //     { name: "peopleCarOrPassport", maxCount: 1 },
+    //     { name: "personalImage", maxCount: 3 },
+    //     { name: "walletQr", maxCount: 1 },
 
     if (profileImageFile) {
       updates.push(`profileimage = $${paramIndex++}`);
@@ -440,9 +438,9 @@ export const memberUpdateImageProfile = async (req, res) => {
       values.push(peopleCarOrPassport);
     }
 
-    if (personalImageArray.length > 0) {
+    if (personalImage) {
       updates.push(`personalimage = $${paramIndex++}`);
-      values.push(JSON.stringify(personalImageArray)); // store as JSON
+      values.push(JSON.stringify(personalImage)); // store as JSON
     }
     if (walletQrFile) {
       updates.push(`walletqr = $${paramIndex++}`);
