@@ -1,120 +1,128 @@
 import { dbExecution } from "../../dbconfig/dbconfig.js";
-
 export const queryAllProductByMemberId = async (req, res) => {
   try {
     const id = req.query.id ?? 0;
     const page = req.query.page ?? 0;
     const limit = req.query.limit ?? 15;
 
-if (!id) {
-  return res.status(400).send({
-    status: false,
-    message: "Missing member id",
-    data: [],
-  });
-}
+    if (!id) {
+      return res.status(400).send({
+        status: false,
+        message: "Missing member id",
+        data: [],
+      });
+    }
 
     const validPage = Math.max(parseInt(page, 10) || 0, 0);
     const validLimit = Math.max(parseInt(limit, 10) || 15, 1);
     const offset = validPage * validLimit;
 
-    // Count total
-    const countQuery = `
-      select count(*) AS total from (
-   SELECT j.memberid, p.*
-   FROM public.tbproduct p
-   LEFT JOIN public.tbmemberjoinproduct j 
-  ON j.productid = p.id
-  AND j.memberid = $1 and j.status='1'
-   where p.status = '1' 
-     group  by 
-	memberid,id,modelname,type,price1,price2,size,productdetail,reviewnumber,profitrate,image,star,totalsell,p.status,p.cdate
-     )s where s.memberid is not null;
-    `;
-    const countResult = await dbExecution(countQuery, [id]);
-    const total = parseInt(countResult.rows[0]?.total || 0, 10);
-
     const baseUrl = "http://localhost:1789/";
-
     const isFirstPage = validPage === 0;
 
     let profileData = null;
 
-  if (isFirstPage) {
+    // ✅ helper function
+    const buildImage = (img) => {
+      if (!img) return null;
+
+      if (Array.isArray(img)) {
+        return img.map((i) => baseUrl + i);
+      }
+
+      if (typeof img === "string" && img.trim().startsWith("[")) {
+        try {
+          return JSON.parse(img).map((i) => baseUrl + i);
+        } catch {
+          return null;
+        }
+      }
+
+      return baseUrl + img;
+    };
+
+    // ✅ ONLY RUN ON FIRST PAGE
+    if (isFirstPage) {
       try {
         const querySelect = `
-      SELECT id, name, shopname, gender, gmail, password, 
-country, state, profileimage, peoplecarorpassport,
-personalimage, accountname, bankaccount, walletqr, 
-subscribe, star, wallet, totalsell, totalincome, 
-totalwithdrawal, status, statusdetail, becustofadmin, cdate
-      FROM public.tbmember WHERE id = $1 AND status in('1','2') limit 1;
-    `;
+          SELECT id, name, shopname, gender, gmail, password, 
+                 country, state, profileimage, peoplecarorpassport,
+                 personalimage, accountname, bankaccount, walletqr, 
+                 subscribe, star, wallet, totalsell, totalincome, 
+                 totalwithdrawal, status, statusdetail, becustofadmin, cdate
+          FROM public.tbmember 
+          WHERE id = $1 AND status IN ('1','2') 
+          LIMIT 1;
+        `;
 
         const profile = await dbExecution(querySelect, [id]);
 
-        if (!profile || profile.rowCount === 0) {
-          return res.status(200).send({
-            status: true,
-            message: "No data found",
-            data: [],
-          });
-        }
-
-        // ✅ Append full URL to profileimage if exists
-        profileData = profile.rows.map((row) => {
-          let imagePath = null;
-
-          if (row.profileimage) {
-            // Handle if it's stored as array or string
-            if (Array.isArray(row.profileimage)) {
-              imagePath = row.profileimage.map((img) => `${baseUrl}${img}`);
-            } else {
-              imagePath = `${baseUrl}${row.profileimage}`;
-            }
-          }
-
-          return {
+        // ❗ DO NOT RETURN HERE
+        if (profile && profile.rowCount > 0) {
+          profileData = profile.rows.map((row) => ({
             ...row,
-            profileimage: imagePath,
-          };
-        });
+            profileimage: buildImage(row.profileimage),
+            peoplecarorpassport: buildImage(row.peoplecarorpassport),
+            personalimage: buildImage(row.personalimage),
+            walletqr: buildImage(row.walletqr),
+          }));
+        } else {
+          profileData = null; // ✅ keep null if not found
+        }
       } catch (error) {
         console.error("Error in queryMemberData:", error);
-        res.status(500).send({
-          status: false,
-          message: "Internal Server Error",
-          error: error.message,
-          data: [],
-        });
+        // ❗ DO NOT STOP API
+        profileData = null;
       }
     }
 
-    // Fetch paginated data
+    // ✅ COUNT
+    const countQuery = `
+      SELECT COUNT(*) AS total FROM (
+        SELECT j.memberid, p.*
+        FROM public.tbproduct p
+        LEFT JOIN public.tbmemberjoinproduct j 
+          ON j.productid = p.id
+          AND j.memberid = $1 AND j.status='1'
+        WHERE p.status = '1' 
+        GROUP BY 
+          memberid,id,modelname,type,price1,price2,size,
+          productdetail,reviewnumber,profitrate,image,
+          star,totalsell,p.status,p.cdate
+      ) s 
+      WHERE s.memberid IS NOT NULL;
+    `;
+
+    const countResult = await dbExecution(countQuery, [id]);
+    const total = parseInt(countResult.rows[0]?.total || 0, 10);
+
+    // ✅ DATA QUERY
     const dataQuery = `
-   select * from (
-   SELECT j.memberid, p.*
-   FROM public.tbproduct p
-   LEFT JOIN public.tbmemberjoinproduct j 
-   ON j.productid = p.id
-   AND j.memberid = $1 and j.status='1'
-   where p.status = '1'
-    )s where s.memberid is not null
-  group  by 
-	memberid,id,modelname,type,price1,price2,size,productdetail,reviewnumber,profitrate,image,star,totalsell,status,cdate
-    order by cdate desc
+      SELECT * FROM (
+        SELECT j.memberid, p.*
+        FROM public.tbproduct p
+        LEFT JOIN public.tbmemberjoinproduct j 
+          ON j.productid = p.id
+          AND j.memberid = $1 AND j.status='1'
+        WHERE p.status = '1'
+      ) s 
+      WHERE s.memberid IS NOT NULL
+      GROUP BY 
+        memberid,id,modelname,type,price1,price2,size,
+        productdetail,reviewnumber,profitrate,image,
+        star,totalsell,status,cdate
+      ORDER BY cdate DESC
       LIMIT $2 OFFSET $3;
     `;
 
     let rows =
       (await dbExecution(dataQuery, [id, validLimit, offset]))?.rows || [];
 
-    // ✅ Safely parse JSON columns and image list
+    // ✅ FORMAT PRODUCT DATA
     rows = rows.map((r) => {
       const parseJSON = (val) => {
         if (!val) return null;
         try {
-          // handle cases: already object, JSON string, or quoted JSON string
           if (typeof val === "object") return val;
           if (typeof val === "string") {
             const clean = val.replace(/^"|"$/g, "").replace(/\\"/g, '"');
@@ -125,17 +133,15 @@ totalwithdrawal, status, statusdetail, becustofadmin, cdate
         }
       };
 
-      // ✅ Parse the 3 JSON-like fields
       const size = parseJSON(r.size);
       const productDetail = parseJSON(r.productdetail);
       const detail = parseJSON(r.detail);
 
-      // ✅ Parse images into clean URLs
       let imgs = [];
       if (r.image) {
         try {
           if (Array.isArray(r.image)) {
-            imgs = r.image;
+            imgs = r.image.map((i) => baseUrl + i);
           } else if (typeof r.image === "string") {
             const clean = r.image.replace(/[{}"]/g, "");
             imgs = clean.split(",").map((i) => baseUrl + i.trim());
@@ -154,15 +160,14 @@ totalwithdrawal, status, statusdetail, becustofadmin, cdate
       };
     });
 
-    // ✅ Response
-    res.status(200).send({
+    // ✅ FINAL RESPONSE
+    return res.status(200).send({
       status: true,
       message: rows.length > 0 ? "Query successful" : "No data found",
       data: {
-        profile: profileData,
+        profile: profileData, // ✅ only filled on page 0
         products: rows,
       },
-
       pagination: {
         page: validPage,
         limit: validLimit,
@@ -171,8 +176,8 @@ totalwithdrawal, status, statusdetail, becustofadmin, cdate
       },
     });
   } catch (error) {
-    console.error("Error in queryaAll:", error);
-    res.status(500).send({
+    console.error("Error in queryAllProductByMemberId:", error);
+    return res.status(500).send({
       status: false,
       message: "Internal Server Error",
       data: [],
