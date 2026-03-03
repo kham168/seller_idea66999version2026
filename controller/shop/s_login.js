@@ -364,7 +364,7 @@ export const member_register = async (req, res) => {
       INSERT INTO public.tbmember(
         id, name, shopname, gender, gmail, password, country, 
         wallet, status,statusdetail,becustofadmin, cdate
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, '0', '2','Your branch is waiting for approval.','23', NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, '0', '2','Your branch is waiting for approval.','1771295380', NOW())
       RETURNING *;
     `;
 

@@ -74,9 +74,8 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
   let { memberId, userId, amount, detail } = req.body;
 
   let cleanId = String(memberId).trim();
-  let amountNum = Number(amount);
 
-  if (!cleanId || !userId || !amountNum) {
+  if (!cleanId || !userId || !amount) {
     return res.status(400).send({
       status: false,
       message: "Missing id or amount",
@@ -111,25 +110,26 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
         data: [],
       });
     }
-
+    let amountNum = 0;
     const userName = checkUserResult.rows[0].name || "";
 
     // 🔍 Check pending
     const checkStatus = `
         SELECT id, toid, amount 
         FROM public.tblogsmemberpayment 
-        WHERE id=$1 AND status='pending'
+        WHERE id=$1 AND status='pending' and memberid<>toid
         ORDER BY cdate ASC 
         LIMIT 1;
     `;
 
-    const checkStatusResult = await dbExecution(checkStatus, [cleanId]);
+    const checkStatusResult = await dbExecution(checkStatus, [amount]);
     if (!checkStatusResult || checkStatusResult.rowCount === 0) {
       pendingCount = "0";
+      amountNum = Number(amount);
     } else {
       transId = checkStatusResult.rows[0].id;
       cleanId = checkStatusResult.rows[0].toid;
-      amount = Number(checkStatusResult.rows[0].amount);
+      amountNum = Number(checkStatusResult.rows[0].amount);
       pendingCount = "1";
     }
 
@@ -165,10 +165,9 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
       });
     }
 
-    const amountAfter = walletNum + amountNum;
-    const freeCreditAfter = freeCredit + amountNum;
-
     if (pendingCount === "1") {
+      const amountAfter = walletNum + amountNum;
+
       memberUpdated = await dbExecution(
         `UPDATE public.tbmember 
          SET wallet=$2
@@ -189,13 +188,32 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
          WHERE id=$1 AND type='refill'`,
         [transId, userId],
       );
-    } else if (cleanId && amountNum) {
+    } else if (cleanId && amountNum < 11000) {
+      const amountAfter = walletNum + amountNum;
+      const freeCreditAfter = freeCredit + amountNum;
+
       memberUpdated = await dbExecution(
         `UPDATE public.tbmember 
          SET wallet=$2, free_credit=$3 
          WHERE id=$1 
          RETURNING id, wallet, free_credit`,
         [cleanId, amountAfter, freeCreditAfter],
+      );
+
+      await dbExecution(
+        `INSERT INTO public.tbadmin_confirm_data(
+        transid, type, userid, username, amountbf, amount, amountat, detail, cdate
+      )
+      VALUES ($1, 'addfreecredit', $2, $3, $4, $5, $6, $7, NOW())`,
+        [
+          cleanId,
+          userId,
+          userName,
+          freeCredit,
+          amountNum,
+          freeCreditAfter,
+          detail,
+        ],
       );
     } else {
       return res.status(400).send({
@@ -214,21 +232,6 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
     }
 
     // Insert admin log
-    await dbExecution(
-      `INSERT INTO public.tbadmin_confirm_data(
-        transid, type, userid, username, amountbf, amount, amountat, detail, cdate
-      )
-      VALUES ($1, 'addfreecredit', $2, $3, $4, $5, $6, $7, NOW())`,
-      [
-        cleanId,
-        userId,
-        userName,
-        freeCredit,
-        amountNum,
-        freeCreditAfter,
-        detail,
-      ],
-    );
 
     return res.status(200).send({
       status: true,
