@@ -165,7 +165,7 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
       });
     }
 
-    if (pendingCount === "1") {
+    if (pendingCount === "1"  && amountNum <= 10000) {
       const amountAfter = walletNum + amountNum;
 
       memberUpdated = await dbExecution(
@@ -188,7 +188,7 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
          WHERE id=$1 AND type='refill'`,
         [transId, userId],
       );
-    } else if (cleanId && amountNum < 11000) {
+    } else if (cleanId && amountNum <=10000) {
       const amountAfter = walletNum + amountNum;
       const freeCreditAfter = freeCredit + amountNum;
 
