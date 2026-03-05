@@ -1,4 +1,4 @@
-import { Router } from "express"; 
+import { Router } from "express";
 import { verifyJWT } from "../middleware/auth.js";
 import {
   queryOrderDataOne,
@@ -23,7 +23,7 @@ import {
   updatePasswordConfirmByMail,
   getAllUserAC,
   memberUpdateBeLongToUser,
-  queryShopAndOrderPendingList
+  queryShopAndOrderPendingList,
 } from "../controller/admin/a_login.js";
 import {
   confirmSellStatus,
@@ -39,7 +39,9 @@ import {
   acUpdateData,
   queryACData,
   adminConfirmUserAccount,
-  adminManualAddCreditToMember123,getUserConfirmData
+  adminManualAddCreditToMember123,
+  getUserConfirmData,
+  updateCashTransferFail,
 } from "../controller/admin/a_payment.js";
 import { uploadImage } from "../middleware/product.uploadimage.js";
 //import { protect } from "../middleware/token.js"; insertOrderData
@@ -78,13 +80,15 @@ router.put(
   verifyJWT,
   normal_update_order_list_into_to_failed,
 );
+router.put("/updaterefillfail", verifyJWT, updateCashTransferFail);
+
 router.post(
   "/adminUpdatePayment",
   verifyJWT,
   StaffConfirmPayForMemberPaymentAndWithdraw,
 );
 router.post("/adminLoginN", adminLogin);
-router.get("/getShopOrderPending",verifyJWT, queryShopAndOrderPendingList);
+router.get("/getShopOrderPending", verifyJWT, queryShopAndOrderPendingList);
 router.get("/getAdminDataById", verifyJWT, queryAdminData);
 router.get("/getUserAll", verifyJWT, getAllUserAC);
 router.post("/adminRegister", verifyJWT, admin_register);
@@ -94,7 +98,7 @@ router.post("/insertProductList", verifyJWT, uploadImage, insertData);
 router.post("/insertACData", verifyJWT, uploadImage, insertACData);
 router.get("/getACData", verifyJWT, queryACData);
 router.post("/updateACData", verifyJWT, uploadImage, acUpdateData);
-router.put("/updateBeToUS",verifyJWT, memberUpdateBeLongToUser);
+router.put("/updateBeToUS", verifyJWT, memberUpdateBeLongToUser);
 router.post("/confirmSellStatus", verifyJWT, confirmSellStatus);
 router.put("/updateReviewNumber", verifyJWT, UpdateReviewNumberOfAnyProduct);
 router.put("/updatePassword", verifyJWT, updatePassword);

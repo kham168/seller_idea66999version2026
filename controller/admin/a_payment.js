@@ -499,6 +499,50 @@ export const StaffConfirmPayForMemberPaymentAndWithdraw = async (req, res) => {
   }
 };
 
+export const updateCashTransferFail = async (req, res) => {
+  try {
+    const { id, userId } = req.body;
+
+    if (!id || !userId) {
+      return res.status(400).send({
+        status: false,
+        message: "id and userconfirm are required"
+      });
+    }
+
+    const sql = `
+      UPDATE public.tblogsmemberpayment
+      SET status = 'fail',
+          resultdesc = 'Cash transfer not reviewed.',
+          userconfirm = $2
+      WHERE id = $1 and status='pending' AND type='refill'
+      RETURNING status, resultdesc, userconfirm;
+    `;
+
+    const result = await dbExecution(sql, [id, userId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).send({
+        status: false,
+        message: "Payment record not found"
+      });
+    }
+
+    res.status(200).send({
+      status: true,
+      message: "Updated data successfully",
+      data: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error("Error updating cash transfer:", error);
+    res.status(500).send({
+      status: false,
+      message: "Internal Server Error"
+    });
+  }
+};
+
 export const acUpdateData = async (req, res) => {
   const { id, name, no, type, status } = req.body;
 
