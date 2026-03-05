@@ -165,7 +165,7 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
       });
     }
 
-    if (pendingCount === "1"  && amountNum <= 10000) {
+    if (pendingCount === "1"  && amountNum <= 20000) {
       const amountAfter = walletNum + amountNum;
 
       memberUpdated = await dbExecution(
