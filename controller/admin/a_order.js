@@ -725,15 +725,31 @@ export const queryAllMemberActiveForSupperAdmin = async (req, res) => {
       `;
 
       dataQuery = `
-        SELECT 
-          a.id AS staffid,
-          a.name AS staffname,
-          m.*
-        FROM public.tbmember m
-        LEFT JOIN public.tbadminuser a 
-          ON a.id = m.becustofadmin
-        WHERE m.status = '1'
-        ORDER BY m.cdate DESC
+SELECT 
+    a.id AS staffid,
+    a.name AS staffname,
+    m.id, m.name, shopname, gender, m.gmail, country, 
+state, profileimage, peoplecarorpassport, personalimage, accountname,
+bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
+totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit,
+    COUNT(*) FILTER (
+        WHERE o.sellstatus='pending'
+           OR o.incomestatus='pending'
+    ) AS pendingstatus
+FROM public.tbmember m
+LEFT JOIN public.tbadminuser a
+    ON a.id = m.becustofadmin
+LEFT JOIN public.tborderpd o
+    ON o.memberid = m.id
+WHERE m.status = '1'
+GROUP BY 
+    a.id,
+    a.name,
+    m.id, m.name, shopname, gender, m.gmail, country, 
+state, profileimage, peoplecarorpassport, personalimage, accountname,
+bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
+totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit
+ORDER BY m.cdate DESC
         LIMIT $1 OFFSET $2;
       `;
 
@@ -758,17 +774,32 @@ export const queryAllMemberActiveForSupperAdmin = async (req, res) => {
         AND m.becustofadmin = $1;
       `;
 
-      dataQuery = `
-        SELECT 
-          a.id AS staffid,
-          a.name AS staffname,
-          m.*
-        FROM public.tbmember m
-        INNER JOIN public.tbadminuser a 
-          ON a.id = m.becustofadmin
-        WHERE m.status = '1'
-        AND m.becustofadmin = $1
-        ORDER BY m.cdate DESC
+      dataQuery = ` 
+SELECT 
+    a.id AS staffid,
+    a.name AS staffname,
+    m.id, m.name, shopname, gender, m.gmail, country, 
+state, profileimage, peoplecarorpassport, personalimage, accountname,
+bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
+totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit,
+    COUNT(*) FILTER (
+        WHERE o.sellstatus='pending'
+           OR o.incomestatus='pending'
+    ) AS pendingstatus
+FROM public.tbmember m
+LEFT JOIN public.tbadminuser a
+    ON a.id = m.becustofadmin
+LEFT JOIN public.tborderpd o
+    ON o.memberid = m.id
+WHERE m.status = '1'  AND m.becustofadmin = $1
+GROUP BY 
+    a.id,
+    a.name,
+    m.id, m.name, shopname, gender, m.gmail, country, 
+state, profileimage, peoplecarorpassport, personalimage, accountname,
+bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
+totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit
+ORDER BY m.cdate DESC
         LIMIT $2 OFFSET $3;
       `;
 

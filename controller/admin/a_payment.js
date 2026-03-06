@@ -165,7 +165,7 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
       });
     }
 
-    if (pendingCount === "1"  && amountNum <= 20000) {
+    if (pendingCount === "1" && amountNum <= 20000) {
       const amountAfter = walletNum + amountNum;
 
       memberUpdated = await dbExecution(
@@ -188,7 +188,7 @@ export const adminManualAddCreditToMember123 = async (req, res) => {
          WHERE id=$1 AND type='refill'`,
         [transId, userId],
       );
-    } else if (cleanId && amountNum <=10000) {
+    } else if (cleanId && amountNum <= 10000) {
       const amountAfter = walletNum + amountNum;
       const freeCreditAfter = freeCredit + amountNum;
 
@@ -501,44 +501,54 @@ export const StaffConfirmPayForMemberPaymentAndWithdraw = async (req, res) => {
 
 export const updateCashTransferFail = async (req, res) => {
   try {
-    const { id, userId } = req.body;
+    let { id, userId, type, detail } = req.body;
 
     if (!id || !userId) {
       return res.status(400).send({
         status: false,
-        message: "id and userconfirm are required"
+        message: "id and userconfirm are required",
       });
+    }
+
+    if (type !== "refill" && type !== "withdraw") {
+      return res.status(400).send({
+        status: false,
+        message: "action type are required",
+      });
+    }
+
+    if (!detail) {
+      detail = "There is no review for your cash transfer.";
     }
 
     const sql = `
       UPDATE public.tblogsmemberpayment
       SET status = 'fail',
-          resultdesc = 'Cash transfer not reviewed.',
-          userconfirm = $2
-      WHERE id = $1 and status='pending' AND type='refill'
+          resultdesc = $3,
+          userconfirm = $4
+      WHERE id = $1 and status='pending' AND type=$2
       RETURNING status, resultdesc, userconfirm;
     `;
 
-    const result = await dbExecution(sql, [id, userId]);
+    const result = await dbExecution(sql, [id, type, detail, userId]);
 
     if (result.rows.length === 0) {
       return res.status(404).send({
         status: false,
-        message: "Payment record not found"
+        message: "Payment record not found",
       });
     }
 
     res.status(200).send({
       status: true,
       message: "Updated data successfully",
-      data: result.rows[0]
+      data: result.rows[0],
     });
-
   } catch (error) {
     console.error("Error updating cash transfer:", error);
     res.status(500).send({
       status: false,
-      message: "Internal Server Error"
+      message: "Internal Server Error",
     });
   }
 };
