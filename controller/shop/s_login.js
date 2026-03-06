@@ -415,18 +415,11 @@ export const memberUpdateImageProfile = async (req, res) => {
     let paramIndex = 2; // $1 is reserved for id
 
     // ✅ Get uploaded files from separate fields
-    const profileImageFile = req.files?.profileimage?.[0]?.filename || null;
-    const peopleCarOrPassport =
-      req.files?.peopleCarOrPassport?.[0]?.filename || null;
-    const personalImage = req.files?.personalImage
-      ? req.files.personalImage.map((file) => file.filename)
-      : [];
-    const walletQrFile = req.files?.walletQr?.[0]?.filename || null;
 
-    //  { name: "profileimage", maxCount: 1 },
-    //     { name: "peopleCarOrPassport", maxCount: 1 },
-    //     { name: "personalImage", maxCount: 3 },
-    //     { name: "walletQr", maxCount: 1 },
+    const profileImageFile = req.files?.profileimage?.[0]?.filename;
+    const peopleCarOrPassport = req.files?.peopleCarOrPassport?.[0]?.filename;
+    const personalImageFile = req.files?.personalImage?.[0]?.filename;
+    const walletQrFile = req.files?.walletQr?.[0]?.filename;
 
     if (profileImageFile) {
       updates.push(`profileimage = $${paramIndex++}`);
@@ -438,10 +431,11 @@ export const memberUpdateImageProfile = async (req, res) => {
       values.push(peopleCarOrPassport);
     }
 
-    if (personalImage) {
+    if (personalImageFile) {
       updates.push(`personalimage = $${paramIndex++}`);
-      values.push(JSON.stringify(personalImage)); // store as JSON
+      values.push(personalImageFile);
     }
+
     if (walletQrFile) {
       updates.push(`walletqr = $${paramIndex++}`);
       values.push(walletQrFile);
