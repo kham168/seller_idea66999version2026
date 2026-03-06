@@ -725,30 +725,31 @@ export const queryAllMemberActiveForSupperAdmin = async (req, res) => {
       `;
 
       dataQuery = `
-SELECT 
+      SELECT 
     a.id AS staffid,
     a.name AS staffname,
     m.id, m.name, shopname, gender, m.gmail, country, 
-state, profileimage, peoplecarorpassport, personalimage, accountname,
-bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
-totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit,
-    COUNT(*) FILTER (
-        WHERE o.sellstatus='pending'
-           OR o.incomestatus='pending'
-    ) AS pendingstatus
+    state, profileimage, peoplecarorpassport, personalimage, accountname,
+    bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
+    totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit,
+    COUNT(o.dd) AS pendingstatus
 FROM public.tbmember m
 LEFT JOIN public.tbadminuser a
     ON a.id = m.becustofadmin
-LEFT JOIN public.tborderpd o
+LEFT JOIN (
+    SELECT id AS dd, memberid
+    FROM public.tborderpd
+    WHERE sellstatus = 'pending' 
+       OR incomestatus = 'pending'
+    GROUP BY id, memberid
+) o
     ON o.memberid = m.id
-WHERE m.status = '1'
+WHERE m.status = '1'  
 GROUP BY 
-    a.id,
-    a.name,
-    m.id, m.name, shopname, gender, m.gmail, country, 
-state, profileimage, peoplecarorpassport, personalimage, accountname,
-bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
-totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit
+    a.id,a.name,m.id, m.name, shopname, gender, m.gmail, country, 
+    state, profileimage, peoplecarorpassport, personalimage, accountname,
+    bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
+    totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit
 ORDER BY m.cdate DESC
         LIMIT $1 OFFSET $2;
       `;
@@ -774,32 +775,33 @@ ORDER BY m.cdate DESC
         AND m.becustofadmin = $1;
       `;
 
-      dataQuery = ` 
+      dataQuery = `  
 SELECT 
     a.id AS staffid,
     a.name AS staffname,
     m.id, m.name, shopname, gender, m.gmail, country, 
-state, profileimage, peoplecarorpassport, personalimage, accountname,
-bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
-totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit,
-    COUNT(*) FILTER (
-        WHERE o.sellstatus='pending'
-           OR o.incomestatus='pending'
-    ) AS pendingstatus
+    state, profileimage, peoplecarorpassport, personalimage, accountname,
+    bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
+    totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit,
+    COUNT(o.dd) AS pendingstatus
 FROM public.tbmember m
 LEFT JOIN public.tbadminuser a
     ON a.id = m.becustofadmin
-LEFT JOIN public.tborderpd o
+LEFT JOIN (
+    SELECT id AS dd, memberid
+    FROM public.tborderpd
+    WHERE sellstatus = 'pending' 
+       OR incomestatus = 'pending'
+    GROUP BY id, memberid
+) o
     ON o.memberid = m.id
-WHERE m.status = '1'  AND m.becustofadmin = $1
+WHERE m.status = '1' AND m.becustofadmin = $1
 GROUP BY 
-    a.id,
-    a.name,
-    m.id, m.name, shopname, gender, m.gmail, country, 
-state, profileimage, peoplecarorpassport, personalimage, accountname,
-bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
-totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit
-ORDER BY m.cdate DESC
+    a.id,a.name,m.id, m.name, shopname, gender, m.gmail, country, 
+    state, profileimage, peoplecarorpassport, personalimage, accountname,
+    bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
+    totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit
+ORDER BY m.cdate DESC 
         LIMIT $2 OFFSET $3;
       `;
 
