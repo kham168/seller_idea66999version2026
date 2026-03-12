@@ -626,9 +626,7 @@ export const getDataForHomePage = async (req, res) => {
           ? baseUrl + p.peoplecarorpassport
           : null,
 
-        personalimage: p.personalimage
-          ? JSON.parse(p.personalimage).map((img) => baseUrl + img)
-          : [],
+        personalimage: p.personalimage ? baseUrl + p.personalimage : null,
 
         walletqr: p.walletqr ? baseUrl + p.walletqr : null,
       };
@@ -636,14 +634,22 @@ export const getDataForHomePage = async (req, res) => {
 
     // 2️⃣ Top 5 products
     const getTopData = `
-      SELECT type, COUNT(*)::int AS qty
-      FROM public.tborderpd
-      WHERE memberid = $1
-      GROUP BY type
-      ORDER BY qty DESC
-      LIMIT 5;
+       SELECT 
+        SUM(Incomepending) AS incomepending,
+        SUM(paymentpending) AS paymentpending
+      FROM (
+          SELECT COUNT(*) AS Incomepending, 0 AS paymentpending
+          FROM public.tborderpd
+          WHERE memberid=$1 AND incomestatus='pending'
+
+          UNION ALL
+
+          SELECT 0 AS Incomepending, COUNT(*) AS paymentpending
+          FROM public.tblogsmemberpayment
+          WHERE memberid=$1 AND status='pending'
+      ) s;
     `;
-    const topResult = await dbExecution(getTopData, [memberId]);
+    const pendingList = await dbExecution(getTopData, [memberId]);
 
     // 3️⃣ Latest 15 orders
     const getOrderList = `
@@ -665,7 +671,7 @@ export const getDataForHomePage = async (req, res) => {
       message: "Query successful",
       data: {
         profile,
-        topProducts: topResult.rows,
+        pendingList: pendingList.rows,
         recentOrders: orderResult.rows,
       },
     });

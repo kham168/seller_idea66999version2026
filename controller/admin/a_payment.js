@@ -1,5 +1,58 @@
 import { dbExecution } from "../../dbconfig/dbconfig.js";
 
+export const queryForAdmin = async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        SUM(sohoppending) AS sohoppending,
+        SUM(paymentpending) AS paymentpending,
+        SUM(orderpending) AS orderpending
+      FROM (
+        SELECT 0 AS sohoppending, COUNT(*) AS paymentpending, 0 AS orderpending
+        FROM public.tblogsmemberpayment
+        WHERE status = 'pending'
+
+        UNION ALL
+
+        SELECT 0 AS sohoppending, 0 AS paymentpending, COUNT(*) AS orderpending
+        FROM public.tborderpd
+        WHERE sellstatus = 'pending' OR incomestatus = 'pending'
+
+        UNION ALL
+
+        SELECT COUNT(*) AS sohoppending, 0 AS paymentpending, 0 AS orderpending
+        FROM public.tbmember
+        WHERE status = '2'
+      ) s;
+    `;
+
+    const result = await dbExecution(query, []);
+
+    if (!result || result.rowCount === 0) {
+      return res.status(200).send({
+        status: true,
+        message: "No data found",
+        data: {},
+      });
+    }
+
+    return res.status(200).send({
+      status: true,
+      message: "Query successful",
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Error in queryForAdmin:", error);
+
+    return res.status(500).send({
+      status: false,
+      message: "Internal Server Error",
+      error: error.message,
+      data: {},
+    });
+  }
+};
+  
 export const adminConfirmUserAccount = async (req, res) => {
   const { id, status } = req.body;
   let { statusDetail } = req.body; // ✅ change to let

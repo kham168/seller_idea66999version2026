@@ -23,6 +23,42 @@ export const queryAll = async (req, res) => {
 
     const baseUrl = "http://localhost:1789/";
 
+    let pendingData = {
+      shoppending: 0,
+      paymentpending: 0,
+      orderpending: 0,
+    };
+
+    if (offset === 0) {
+      const query = `
+    SELECT 
+      SUM(shoppending) AS shoppending,
+      SUM(paymentpending) AS paymentpending,
+      SUM(orderpending) AS orderpending
+    FROM (
+      SELECT 0 AS shoppending, COUNT(*) AS paymentpending, 0 AS orderpending
+      FROM public.tblogsmemberpayment
+      WHERE status = 'pending'
+
+      UNION ALL
+
+      SELECT 0 AS shoppending, 0 AS paymentpending, COUNT(*) AS orderpending
+      FROM public.tborderpd
+      WHERE sellstatus = 'pending' OR incomestatus = 'pending'
+
+      UNION ALL
+
+      SELECT COUNT(*) AS shoppending, 0 AS paymentpending, 0 AS orderpending
+      FROM public.tbmember
+      WHERE status = '2'
+    ) s;
+  `;
+
+      const pendingResult = await dbExecution(query, []);
+
+      pendingData = pendingResult.rows[0] || pendingData;
+    }
+
     // Fetch paginated data
     const dataQuery = `
       SELECT   id, modelname, type, price1, price2, size, 
@@ -82,6 +118,7 @@ export const queryAll = async (req, res) => {
       status: true,
       message: rows.length > 0 ? "Query successful" : "No data found",
       data: rows,
+      pendingData: pendingData,
       pagination: {
         page: validPage,
         limit: validLimit,
@@ -99,7 +136,7 @@ export const queryAll = async (req, res) => {
     });
   }
 };
-  
+
 // query muas data all or select top 15
 export const queryOne = async (req, res) => {
   try {
@@ -179,8 +216,16 @@ export const queryOne = async (req, res) => {
 
 // insert data  test  nw work lawm
 export const insertData = async (req, res) => {
-  const { name, type, price1, price2, size, productDetail,reviewNumber, profitRate } =
-    req.body;
+  const {
+    name,
+    type,
+    price1,
+    price2,
+    size,
+    productDetail,
+    reviewNumber,
+    profitRate,
+  } = req.body;
 
   // ✅ Validate required fields
   const id = "p" + Date.now();
@@ -218,7 +263,8 @@ export const insertData = async (req, res) => {
       Array.isArray(size) ? JSON.stringify(size) : size, // ✅ fix here
       Array.isArray(productDetail)
         ? JSON.stringify(productDetail)
-        : productDetail,reviewNumber,
+        : productDetail,
+      reviewNumber,
       profitRate,
       imageArray,
     ];
@@ -249,4 +295,3 @@ export const insertData = async (req, res) => {
     });
   }
 };
- 

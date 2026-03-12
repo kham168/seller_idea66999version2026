@@ -553,3 +553,21 @@ Params: 1769572623279
     
 
 Params: 1769572623279
+2026-03-12 09:29:10	Query: 
+       SELECT 
+        SUM(Incomepending) AS incomepending,
+        SUM(paymentpending) AS paymentpending
+      FROM (
+          SELECT COUNT(*) AS Incomepending, 0 AS paymentpending
+          FROM public.tborderpd
+          WHERE memberid='' AND incomestatus='pending'
+
+          UNION ALL
+
+          SELECT 0 AS Incomepending, COUNT(*) AS paymentpending
+          FROM public.tblogsmemberpayment
+          WHERE memberid='' AND status='pending'
+      ) s;
+    
+
+Params: 1770880201032
