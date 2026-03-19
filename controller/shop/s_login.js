@@ -640,11 +640,10 @@ export const getDataForHomePage = async (req, res) => {
       FROM (
          SELECT COUNT(*) AS Incomepending, 0 AS paymentpending from (
          select id FROM public.tborderpd
-          WHERE memberid='1772002507540' AND (sellstatus='pending' or incomestatus='pending')
+          WHERE memberid=$1 AND (sellstatus='pending' or incomestatus='pending')
 		  group by id
           )s
           UNION ALL
-
           SELECT 0 AS Incomepending, COUNT(*) AS paymentpending
           FROM public.tblogsmemberpayment
           WHERE memberid=$1 AND status='pending'
