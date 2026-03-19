@@ -42,9 +42,10 @@ export const queryAll = async (req, res) => {
 
       UNION ALL
 
-      SELECT 0 AS shoppending, 0 AS paymentpending, COUNT(*) AS orderpending
-      FROM public.tborderpd
-      WHERE sellstatus = 'pending' OR incomestatus = 'pending'
+       SELECT 0 AS shoppending, 0 AS paymentpending, COUNT(*) AS orderpending
+     from ( select id FROM public.tborderpd
+      WHERE sellstatus = 'pending' OR incomestatus = 'pending' group by id
+        )s
 
       UNION ALL
 
