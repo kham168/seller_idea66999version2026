@@ -746,10 +746,10 @@ LEFT JOIN (
 ) o
     ON o.memberid = m.id
     LEFT JOIN (
-  SELECT  id as PP,toid  FROM public.tblogsmemberpayment
-  WHERE status = 'pending' group by id,toid 
+  SELECT  id as PP,case when toid='' or toid=null then memberid else toid end as AA  FROM public.tblogsmemberpayment
+  WHERE status = 'pending' group by id,AA
 ) p
-    ON p.toid = m.id
+    ON p.AA = m.id
 WHERE m.status = '1'  
 GROUP BY 
     a.id,a.name,m.id, m.name, shopname, gender, m.gmail, country, 
@@ -802,9 +802,9 @@ LEFT JOIN (
     GROUP BY id, memberid
 ) o ON o.memberid = m.id
     LEFT JOIN (
-  SELECT  id as PP,toid  FROM public.tblogsmemberpayment
-  WHERE status = 'pending' group by id,toid 
-) p ON p.toid = m.id
+  SELECT  id as PP,case when toid='' or toid=null then memberid else toid end as AA  FROM public.tblogsmemberpayment
+  WHERE status = 'pending' group by id,AA
+) p ON p.AA = m.id
 WHERE m.status = '1' AND m.becustofadmin = $1
 GROUP BY 
     a.id,a.name,m.id, m.name, shopname, gender, m.gmail, country, 
