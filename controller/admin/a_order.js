@@ -725,37 +725,39 @@ export const queryAllMemberActiveForSupperAdmin = async (req, res) => {
       `;
 
       dataQuery = `
-      SELECT 
+       SELECT 
     a.id AS staffid,
     a.name AS staffname,
-    m.id, m.name, shopname, gender, m.gmail, country, 
+    m.id, m.name, shopname, gender, m.gmail, country,
     state, profileimage, peoplecarorpassport, personalimage, accountname,
     bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
     totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit,
-    COUNT(o.dd) AS pendingstatus,
-    COUNT(p.pp) AS pendingpayment
+    o.dd AS pendingstatus,
+	 p.pp AS pendingpayment
 FROM public.tbmember m
 LEFT JOIN public.tbadminuser a
     ON a.id = m.becustofadmin
-LEFT JOIN (
+LEFT JOIN ( select count(*) as dd,memberid from (
     SELECT id AS dd, memberid
     FROM public.tborderpd
     WHERE sellstatus = 'pending' 
        OR incomestatus = 'pending'
-    GROUP BY id, memberid
+    GROUP BY id, memberid)s group by memberid
 ) o
     ON o.memberid = m.id
-    LEFT JOIN (
+LEFT JOIN (
+ select count(*)as PP,AA from (
   SELECT  id as PP,case when toid='' or toid=null then memberid else toid end as AA  FROM public.tblogsmemberpayment
-  WHERE status = 'pending' group by id,AA
+  WHERE status = 'pending' group by id,AA 
+  )s group by AA
 ) p
     ON p.AA = m.id
-WHERE m.status = '1'  
+WHERE m.status = '1'
 GROUP BY 
     a.id,a.name,m.id, m.name, shopname, gender, m.gmail, country, 
     state, profileimage, peoplecarorpassport, personalimage, accountname,
     bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
-    totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit
+    totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit,o.dd,p.pp
 ORDER BY m.cdate DESC
         LIMIT $1 OFFSET $2;
       `;
@@ -781,37 +783,41 @@ ORDER BY m.cdate DESC
         AND m.becustofadmin = $1;
       `;
 
-      dataQuery = `  
-SELECT 
+      dataQuery = ` 
+       SELECT 
     a.id AS staffid,
     a.name AS staffname,
-    m.id, m.name, shopname, gender, m.gmail, country, 
+    m.id, m.name, shopname, gender, m.gmail, country,
     state, profileimage, peoplecarorpassport, personalimage, accountname,
     bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
     totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit,
-    COUNT(o.dd) AS pendingstatus,
-    COUNT(p.pp) AS pendingpayment
+    o.dd AS pendingstatus,
+	 p.pp AS pendingpayment
 FROM public.tbmember m
 LEFT JOIN public.tbadminuser a
     ON a.id = m.becustofadmin
-LEFT JOIN (
+LEFT JOIN ( select count(*) as dd,memberid from (
     SELECT id AS dd, memberid
     FROM public.tborderpd
     WHERE sellstatus = 'pending' 
        OR incomestatus = 'pending'
-    GROUP BY id, memberid
-) o ON o.memberid = m.id
-    LEFT JOIN (
+    GROUP BY id, memberid)s group by memberid
+) o
+    ON o.memberid = m.id
+LEFT JOIN (
+ select count(*)as PP,AA from (
   SELECT  id as PP,case when toid='' or toid=null then memberid else toid end as AA  FROM public.tblogsmemberpayment
-  WHERE status = 'pending' group by id,AA
-) p ON p.AA = m.id
-WHERE m.status = '1' AND m.becustofadmin = $1
+  WHERE status = 'pending' group by id,AA 
+  )s group by AA
+) p
+    ON p.AA = m.id
+WHERE m.status = '1'  and AND m.becustofadmin = $1
 GROUP BY 
     a.id,a.name,m.id, m.name, shopname, gender, m.gmail, country, 
     state, profileimage, peoplecarorpassport, personalimage, accountname,
     bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
-    totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit
-ORDER BY m.cdate DESC 
+    totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit,o.dd,p.pp
+ORDER BY m.cdate DESC
         LIMIT $2 OFFSET $3;
       `;
 
