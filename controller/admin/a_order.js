@@ -732,7 +732,8 @@ export const queryAllMemberActiveForSupperAdmin = async (req, res) => {
     state, profileimage, peoplecarorpassport, personalimage, accountname,
     bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
     totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit,
-    COUNT(o.dd) AS pendingstatus
+    COUNT(o.dd) AS pendingstatus,
+    COUNT(p.pp) AS pendingpayment
 FROM public.tbmember m
 LEFT JOIN public.tbadminuser a
     ON a.id = m.becustofadmin
@@ -744,6 +745,11 @@ LEFT JOIN (
     GROUP BY id, memberid
 ) o
     ON o.memberid = m.id
+    LEFT JOIN (
+  SELECT  id as PP,toid  FROM public.tblogsmemberpayment
+  WHERE status = 'pending' group by id,toid 
+) p
+    ON p.toid = m.id
 WHERE m.status = '1'  
 GROUP BY 
     a.id,a.name,m.id, m.name, shopname, gender, m.gmail, country, 
@@ -783,7 +789,8 @@ SELECT
     state, profileimage, peoplecarorpassport, personalimage, accountname,
     bankaccount, walletqr, subscribe, star, m.wallet, totalsell, totalincome, 
     totalwithdrawal, m.status, m.statusdetail, becustofadmin, m.cdate, m.free_credit,
-    COUNT(o.dd) AS pendingstatus
+    COUNT(o.dd) AS pendingstatus,
+    COUNT(p.pp) AS pendingpayment
 FROM public.tbmember m
 LEFT JOIN public.tbadminuser a
     ON a.id = m.becustofadmin
@@ -793,8 +800,11 @@ LEFT JOIN (
     WHERE sellstatus = 'pending' 
        OR incomestatus = 'pending'
     GROUP BY id, memberid
-) o
-    ON o.memberid = m.id
+) o ON o.memberid = m.id
+    LEFT JOIN (
+  SELECT  id as PP,toid  FROM public.tblogsmemberpayment
+  WHERE status = 'pending' group by id,toid 
+) p ON p.toid = m.id
 WHERE m.status = '1' AND m.becustofadmin = $1
 GROUP BY 
     a.id,a.name,m.id, m.name, shopname, gender, m.gmail, country, 
