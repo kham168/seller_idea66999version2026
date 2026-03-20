@@ -636,17 +636,27 @@ export const getDataForHomePage = async (req, res) => {
     const getTopData = `
        SELECT 
         SUM(Incomepending) AS incomepending,
-        SUM(paymentpending) AS paymentpending
+        SUM(paymentpending) AS paymentpending,
+		SUM(newproduct) AS newproductpending
       FROM (
-         SELECT COUNT(*) AS Incomepending, 0 AS paymentpending from (
+         SELECT COUNT(*) AS Incomepending, 0 AS paymentpending,0 as newproduct from (
          select id FROM public.tborderpd
           WHERE memberid=$1 AND (sellstatus='pending' or incomestatus='pending')
 		  group by id
           )s
           UNION ALL
-          SELECT 0 AS Incomepending, COUNT(*) AS paymentpending
+          SELECT 0 AS Incomepending, COUNT(*) AS paymentpending,0 as newproduct
           FROM public.tblogsmemberpayment
           WHERE memberid=$1 AND status='pending'
+          UNION ALL
+		  select 0 as Incomepending,0 as paymentpending, count(s.id) as newproduct from (
+       SELECT p.id,m.id as mid
+       FROM public.tbmemberjoinproduct j
+       RIGHT JOIN public.tbproduct p 
+       ON j.productid = p.id
+       left join public.tbmember m on m.id=j.memberid 
+       AND m.id =$1 where p.cdate::date >= CURRENT_DATE - INTERVAL '2 days'
+       )s where mid is null group by id
       ) s;
     `;
     const pendingList = await dbExecution(getTopData, [memberId]);

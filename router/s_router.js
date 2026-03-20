@@ -23,6 +23,11 @@ import {
   memberConfirmIdentity,
   getDataForHomePage,
 } from "../controller/shop/s_login.js";
+import {
+  InsertCovData,
+  query_logs_WH_get_income_per_month,
+  updateCustomerList,
+} from "../controller/admin/a.customerCovTauNyiajTojHli.js";
 const router = Route();
 
 router.get("/getProductList", verifyJWT, queryAllProductByMemberId);
@@ -35,7 +40,7 @@ router.get(
 );
 router.get("/getMemberData", verifyJWT, queryMemberData);
 router.post("/memberRegister", member_register);
-router.post("/memberLogin", memberLogin);   ////.      here MOUA
+router.post("/memberLogin", memberLogin); ////.      here MOUA
 router.post("/joinProduct", verifyJWT, insertJoinProductId);
 router.put("/unJoinProduct", verifyJWT, UnJoinProduct);
 //router.put("/updateProfileImage", uploadImage, memberUpdateImageProfile);
@@ -46,7 +51,8 @@ router.put(
     { name: "peopleCarOrPassport", maxCount: 1 },
     { name: "personalImage", maxCount: 1 },
     { name: "walletQr", maxCount: 1 },
-  ]),verifyJWT,
+  ]),
+  verifyJWT,
   memberUpdateImageProfile,
 );
 router.put(
@@ -54,11 +60,16 @@ router.put(
   upload.fields([
     { name: "peopleCarOrPassport", maxCount: 1 },
     { name: "personalImage", maxCount: 3 },
-  ]),verifyJWT,
+  ]),
+  verifyJWT,
   memberConfirmIdentity,
 );
-router.get("/getLogsPayment",verifyJWT, query_logs_adjust_and_payment);
-router.put("/memberRefill",verifyJWT, uploadImage, member_refill_wallet);
-router.post("/withdraw",verifyJWT, member_withdraw_credit);
+router.get("/getLogsPayment", verifyJWT, query_logs_adjust_and_payment);
+router.put("/memberRefill", verifyJWT, uploadImage, member_refill_wallet);
+router.post("/withdraw", verifyJWT, member_withdraw_credit);
+
+router.post("/insertCustWHGIncome", verifyJWT, uploadImage, InsertCovData);
+router.get("/selectWHGIncome", verifyJWT, query_logs_WH_get_income_per_month);
+router.put("/updateWHGIncome", verifyJWT, updateCustomerList);
 
 export default router;

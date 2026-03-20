@@ -44,10 +44,9 @@ import {
   updateCashTransferFail,
 } from "../controller/admin/a_payment.js";
 import { uploadImage } from "../middleware/product.uploadimage.js";
+
 //import { protect } from "../middleware/token.js"; insertOrderData
 const router = Router();
-//
-//
 
 router.get("/getOrderOne", verifyJWT, queryOrderDataOne);
 router.get("/getOrderAll", verifyJWT, queryOrderDataAll);
