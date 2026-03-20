@@ -746,12 +746,12 @@ LEFT JOIN ( select count(*) as dd,memberid from (
 ) o
     ON o.memberid = m.id
 LEFT JOIN (
- select count(*)as PP,AA from (
-  SELECT  id as PP,case when toid='' or toid=null then memberid else toid end as AA  FROM public.tblogsmemberpayment
-  WHERE status = 'pending' group by id,AA 
-  )s group by AA
+ select count(*)as PP,memberid from (
+  SELECT  id as PP, memberid  FROM public.tblogsmemberpayment
+  WHERE status = 'pending' group by id,memberid 
+  )s group by memberid
 ) p
-    ON p.AA = m.id
+    ON p.memberid = m.id
 WHERE m.status = '1'
 GROUP BY 
     a.id,a.name,m.id, m.name, shopname, gender, m.gmail, country, 
@@ -805,12 +805,12 @@ LEFT JOIN ( select count(*) as dd,memberid from (
 ) o
     ON o.memberid = m.id
 LEFT JOIN (
- select count(*)as PP,AA from (
-  SELECT  id as PP,case when toid='' or toid=null then memberid else toid end as AA  FROM public.tblogsmemberpayment
-  WHERE status = 'pending' group by id,AA 
-  )s group by AA
+ select count(*)as PP,memberid from (
+  SELECT  id as PP, memberid FROM public.tblogsmemberpayment
+  WHERE status = 'pending' group by id,memberid 
+  )s group by memberid
 ) p
-    ON p.AA = m.id
+    ON p.memberid = m.id
 WHERE m.status = '1'  and AND m.becustofadmin = $1
 GROUP BY 
     a.id,a.name,m.id, m.name, shopname, gender, m.gmail, country, 
